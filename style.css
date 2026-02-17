@@ -1,0 +1,221 @@
+:root {
+  font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #10141d;
+  color: #e5e7eb;
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  padding: 1rem 1rem 6rem;
+}
+
+.app-header h1 {
+  margin: 0.5rem 0 1rem;
+  font-size: 2rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #263041;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #9ca3af;
+  padding: 0.65rem 0.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.tab.is-active {
+  color: #dbeafe;
+  border-bottom-color: #93c5fd;
+}
+
+.panel {
+  background: #050914;
+  border: 1px solid #222b3a;
+  border-radius: 16px;
+  padding: 0.8rem;
+}
+
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.task-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  border: 1px solid #293244;
+  border-radius: 12px;
+  padding: 0.7rem;
+}
+
+.task-main { min-width: 0; }
+
+.task-title {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.28rem;
+  overflow-wrap: anywhere;
+}
+
+.count {
+  color: #9ca3af;
+  font-size: 0.88rem;
+}
+
+.task-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+button {
+  border: 1px solid #3c4658;
+  border-radius: 10px;
+  background: #151b27;
+  color: #e5e7eb;
+  min-height: 44px;
+  padding: 0.42rem 0.72rem;
+  cursor: pointer;
+}
+
+button[data-action='inc'],
+button[data-action='restore'],
+.btn-primary {
+  background: #4a5b82;
+  border-color: #4a5b82;
+  color: #eff6ff;
+}
+
+button[data-action='complete'] {
+  background: #123127;
+  border-color: #2d7c67;
+}
+
+button[data-action='reset'] {
+  background: #321c17;
+  border-color: #9b4b3f;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.empty { color: #9ca3af; }
+
+.fab {
+  position: fixed;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  font-size: 2rem;
+  border: none;
+  background: #4a5b82;
+  color: #f8fafc;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.38);
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.add-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #111827;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border: 1px solid #2b3342;
+  padding: 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.add-sheet input {
+  width: 100%;
+  background: #0b1220;
+  color: #e5e7eb;
+  border: 1px solid #3f4a60;
+  border-radius: 10px;
+  padding: 0.6rem;
+}
+
+.sheet-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.error { color: #fca5a5; margin: 0; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 5.8rem;
+  transform: translateX(-50%);
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.toast button {
+  border: none;
+  background: transparent;
+  color: #93c5fd;
+  text-decoration: underline;
+  min-height: auto;
+  padding: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.is-hidden { display: none; }
+
+@media (max-width: 680px) {
+  .task-item { grid-template-columns: 1fr; }
+  .task-actions { justify-content: flex-start; }
+}
