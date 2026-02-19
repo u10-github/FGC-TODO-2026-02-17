@@ -124,3 +124,26 @@ test('can import backup data from hamburger menu', async ({ page }) => {
   await expect(page.locator('#list-switch-btn')).toHaveText('SF6 / リュウ');
   await expect(page.locator('#active-list .task-item', { hasText: 'インポートされた課題' })).toHaveCount(1);
 });
+
+test('import with duplicated list name appends as name(1)', async ({ page }) => {
+  await page.goto('/index.html');
+
+  const raw = JSON.stringify({
+    schemaVersion: 2,
+    currentListId: 'l1',
+    lists: [{ id: 'l1', name: 'タスクリスト', createdAt: 1 }],
+    tasks: [{ id: 't1', title: '重複名タスク', status: 'active', count: 0, listId: 'l1' }],
+  });
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await page.getByRole('menuitem', { name: 'データをインポート' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#import-file-input').setInputFiles({
+    name: 'backup-duplicate.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(raw),
+  });
+
+  await expect(page.locator('#list-switch-btn')).toHaveText('タスクリスト(1)');
+  await expect(page.locator('#active-list .task-item', { hasText: '重複名タスク' })).toHaveCount(1);
+});

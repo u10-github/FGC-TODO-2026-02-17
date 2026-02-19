@@ -108,3 +108,73 @@ export function exportStateData(state) {
 export function importStateData(raw) {
   return parseStatePayload(raw, { throwOnInvalid: true });
 }
+
+function createUniqueListName(baseName, usedNames) {
+  const normalized = (baseName || '').trim() || 'インポート';
+  if (!usedNames.has(normalized)) {
+    usedNames.add(normalized);
+    return normalized;
+  }
+
+  let i = 1;
+  while (usedNames.has(`${normalized}(${i})`)) {
+    i += 1;
+  }
+  const name = `${normalized}(${i})`;
+  usedNames.add(name);
+  return name;
+}
+
+function createUniqueId(prefix, usedIds, start = 0) {
+  let i = start;
+  let candidate = `${prefix}-${i}`;
+  while (usedIds.has(candidate)) {
+    i += 1;
+    candidate = `${prefix}-${i}`;
+  }
+  usedIds.add(candidate);
+  return candidate;
+}
+
+export function mergeImportedState(currentState, importedState) {
+  const now = Date.now();
+  const safeCurrent = {
+    ...createInitialState(),
+    ...currentState,
+    lists: [...(currentState?.lists ?? createInitialState().lists)],
+    tasks: [...(currentState?.tasks ?? [])],
+  };
+
+  const usedNames = new Set(safeCurrent.lists.map((list) => list.name));
+  const usedListIds = new Set(safeCurrent.lists.map((list) => list.id));
+  const usedTaskIds = new Set(safeCurrent.tasks.map((task) => task.id));
+  const importedListIdMap = new Map();
+
+  const appendedLists = importedState.lists.map((list, index) => {
+    const listId = createUniqueId(`imp-list-${now}`, usedListIds, index);
+    const listName = createUniqueListName(list.name, usedNames);
+    importedListIdMap.set(list.id, listId);
+    return {
+      id: listId,
+      name: listName,
+      createdAt: now + index,
+    };
+  });
+
+  const appendedTasks = importedState.tasks
+    .filter((task) => importedListIdMap.has(task.listId))
+    .map((task, index) => ({
+      ...task,
+      id: createUniqueId(`imp-task-${now}`, usedTaskIds, index),
+      listId: importedListIdMap.get(task.listId),
+    }));
+
+  const importedCurrentListId = importedListIdMap.get(importedState.currentListId);
+
+  return {
+    ...safeCurrent,
+    currentListId: importedCurrentListId ?? appendedLists[0]?.id ?? safeCurrent.currentListId,
+    lists: [...safeCurrent.lists, ...appendedLists],
+    tasks: [...safeCurrent.tasks, ...appendedTasks],
+  };
+}

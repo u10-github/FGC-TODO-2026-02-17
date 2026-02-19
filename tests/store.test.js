@@ -5,6 +5,7 @@ import {
   exportStateData,
   importStateData,
   loadState,
+  mergeImportedState,
   saveState,
   STORAGE_KEY,
 } from '../src/core/store.js';
@@ -116,4 +117,26 @@ test('importStateData migrates v1 payload to v2', () => {
 
 test('importStateData throws for invalid payload', () => {
   assert.throws(() => importStateData('{"schemaVersion":2,"tasks":[]}'));
+});
+
+test('mergeImportedState appends lists and renames duplicated names', () => {
+  const currentState = {
+    schemaVersion: 2,
+    currentListId: 'default-list',
+    lists: [{ id: 'default-list', name: 'タスクリスト', createdAt: 0 }],
+    tasks: [{ id: 'c1', title: '既存', status: 'active', count: 0, listId: 'default-list' }],
+  };
+  const importedState = {
+    schemaVersion: 2,
+    currentListId: 'l1',
+    lists: [{ id: 'l1', name: 'タスクリスト', createdAt: 10 }],
+    tasks: [{ id: 'i1', title: '追加', status: 'active', count: 0, listId: 'l1' }],
+  };
+
+  const merged = mergeImportedState(currentState, importedState);
+  assert.equal(merged.lists.length, 2);
+  assert.equal(merged.lists[1].name, 'タスクリスト(1)');
+  assert.equal(merged.tasks.length, 2);
+  assert.equal(merged.tasks[1].title, '追加');
+  assert.equal(merged.tasks[1].listId, merged.lists[1].id);
 });

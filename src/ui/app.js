@@ -1,5 +1,5 @@
 import { addTask, completeTask, deleteTask, getTasksByList, incCount, resetCount, restoreTask } from '../core/tasks.js';
-import { exportStateData, importStateData, loadState, saveState } from '../core/store.js';
+import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
 
 const els = {
   menuBtn: document.getElementById('menu-btn'),
@@ -237,14 +237,15 @@ function triggerImport() {
 
 async function handleImportFile(file) {
   if (!file) return;
-  const confirmed = window.confirm('現在のデータを上書きします。続行しますか？');
+  const confirmed = window.confirm('インポートしたデータを新しいタスクリストとして追加します。続行しますか？');
   if (!confirmed) return;
 
   try {
     const raw = await file.text();
-    const nextState = importStateData(raw);
+    const importedState = importStateData(raw);
+    const nextState = mergeImportedState(state, importedState);
     commit(nextState);
-    announce('インポートが完了しました。');
+    announce('インポートが完了しました。新しいタスクリストを追加しました。');
   } catch {
     announce('インポートに失敗しました。JSON形式を確認してください。');
   } finally {
