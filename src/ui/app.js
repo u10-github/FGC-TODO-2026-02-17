@@ -2,6 +2,8 @@ import { addTask, completeTask, deleteTask, getTasksByList, incCount, resetCount
 import { deleteList, renameList } from '../core/lists.js';
 import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
 
+const TITLE_COLLAPSE_THRESHOLD = 26;
+
 const els = {
   menuBtn: document.getElementById('menu-btn'),
   menuPopover: document.getElementById('menu-popover'),
@@ -37,6 +39,7 @@ let state = loadState({ storage: window.localStorage });
 let currentTab = 'active';
 let toastTimer = null;
 let listMenuId = null;
+const expandedTaskIds = new Set();
 
 function createListId() {
   return `list-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -98,10 +101,14 @@ function render() {
 }
 
 function renderTask(task, done) {
+  const expanded = expandedTaskIds.has(task.id);
+  const shouldShowToggle = task.title.length > TITLE_COLLAPSE_THRESHOLD;
+
   return `
     <li class="task-item" data-task-id="${task.id}">
       <div class="task-main">
-        <span class="task-title">${escapeHtml(task.title)}</span>
+        <span class="task-title ${shouldShowToggle && !expanded ? 'is-clamped' : ''}">${escapeHtml(task.title)}</span>
+        ${shouldShowToggle ? `<button type="button" class="title-toggle" data-action="toggle-title">${expanded ? 'たたむ' : '全文表示'}</button>` : ''}
       </div>
       <div class="task-actions">
         ${done
@@ -139,6 +146,7 @@ function applyActionLabels() {
     row.querySelector('[data-action="complete"]')?.setAttribute('aria-label', `${task.title}を完了にする`);
     row.querySelector('[data-action="delete"]')?.setAttribute('aria-label', `${task.title}を削除する`);
     row.querySelector('[data-action="restore"]')?.setAttribute('aria-label', `${task.title}を復活する`);
+    row.querySelector('[data-action="toggle-title"]')?.setAttribute('aria-label', `${task.title}の表示を切り替える`);
   });
 }
 
@@ -415,6 +423,16 @@ document.body.addEventListener('click', (event) => {
   const taskId = row.dataset.taskId;
   const task = state.tasks.find((item) => item.id === taskId);
   if (!task) return;
+
+  if (action === 'toggle-title') {
+    if (expandedTaskIds.has(taskId)) {
+      expandedTaskIds.delete(taskId);
+    } else {
+      expandedTaskIds.add(taskId);
+    }
+    render();
+    return;
+  }
 
   if (action === 'inc') {
     commit(incCount(state, taskId));
