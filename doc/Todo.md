@@ -14,6 +14,8 @@
 - REQ-UC6: 完了タスクを確認後に永久削除
 - REQ-UC7: 自由記述1入力欄でタスクリスト作成（空/重複不可）
 - REQ-UC8: タスクリスト切替（表示分離 + 選択状態保持）
+- REQ-UC9: データをJSONでエクスポート
+- REQ-UC10: データを確認後にJSONインポート（上書き）
 - REQ-PERSIST-01: localStorage保持（リロード後も維持）
 - REQ-EX-01: localStorage破損時にフォールバック+警告
 
@@ -32,6 +34,10 @@
   - `src/core/tasks.js` を listId 前提に更新
 - [x] IMP-UI-03 (`REQ-UC7`,`REQ-UC8`)
   - リスト作成/切替UI（1入力欄）を実装
+- [x] IMP-STORE-03 (`REQ-UC9`,`REQ-UC10`)
+  - `src/core/store.js` にエクスポート/インポート処理を追加
+- [x] IMP-UI-04 (`REQ-UC9`,`REQ-UC10`)
+  - ハンバーガーメニューと export/import 操作を実装
 - [x] IMP-STYLE-01
   - `style.css` で最小可読性を担保
 
@@ -44,6 +50,8 @@
 - [x] TEST-UC6-01 (`REQ-UC6`) `tests/tasks.test.js`, `tests/e2e/todo-ui.spec.js`
 - [x] TEST-UC7-01 (`REQ-UC7`) `tests/store.test.js`, `tests/e2e/todo-ui.spec.js`
 - [x] TEST-UC8-01 (`REQ-UC8`) `tests/tasks.test.js`, `tests/e2e/todo-ui.spec.js`
+- [x] TEST-UC9-01 (`REQ-UC9`) `tests/store.test.js`
+- [x] TEST-UC10-01 (`REQ-UC10`) `tests/store.test.js`, `tests/e2e/todo-ui.spec.js`
 - [x] TEST-PERSIST-01 (`REQ-PERSIST-01`,`REQ-EX-01`) `tests/store.test.js`
 
 ## トレーサビリティ表
@@ -57,5 +65,7 @@
 | REQ-UC6 | IMP-CORE-01, IMP-UI-02 | TEST-UC6-01 |
 | REQ-UC7 | IMP-STORE-02, IMP-UI-03 | TEST-UC7-01 |
 | REQ-UC8 | IMP-STORE-02, IMP-CORE-02, IMP-UI-03 | TEST-UC8-01 |
+| REQ-UC9 | IMP-STORE-03, IMP-UI-04 | TEST-UC9-01 |
+| REQ-UC10 | IMP-STORE-03, IMP-UI-04 | TEST-UC10-01 |
 | REQ-PERSIST-01 | IMP-STORE-01, IMP-UI-01 | TEST-PERSIST-01 |
 | REQ-EX-01 | IMP-STORE-01 | TEST-PERSIST-01 |

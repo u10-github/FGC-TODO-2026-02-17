@@ -24,24 +24,20 @@ function isValidV2State(parsed) {
   if (parsed.schemaVersion !== SCHEMA_VERSION) return false;
   if (!Array.isArray(parsed.tasks) || !Array.isArray(parsed.lists)) return false;
   if (typeof parsed.currentListId !== 'string' || !parsed.currentListId) return false;
-  return parsed.lists.some((list) => list?.id === parsed.currentListId);
+  const listIds = new Set(parsed.lists.map((list) => list?.id).filter(Boolean));
+  if (!listIds.has(parsed.currentListId)) return false;
+  return parsed.tasks.every((task) => typeof task?.listId === 'string' && listIds.has(task.listId));
 }
 
-export function loadState({ storage, logger = console, key = STORAGE_KEY } = {}) {
-  if (!storage) {
-    throw new Error('storage is required');
-  }
-
+function parseStatePayload(raw, { throwOnInvalid = false, logger = console } = {}) {
   try {
-    const raw = storage.getItem(key);
-    if (!raw) return createInitialState();
-
     const parsed = JSON.parse(raw);
     if (parsed.schemaVersion === 1 && Array.isArray(parsed.tasks)) {
       return migrateV1ToV2(parsed);
     }
 
     if (!isValidV2State(parsed)) {
+      if (throwOnInvalid) throw new Error('Invalid backup schema');
       logger.warn('[store] Invalid schema. Fallback to initial state.');
       return createInitialState();
     }
@@ -53,7 +49,24 @@ export function loadState({ storage, logger = console, key = STORAGE_KEY } = {})
       tasks: parsed.tasks,
     };
   } catch (error) {
+    if (throwOnInvalid) {
+      throw new Error('Invalid backup data');
+    }
     logger.warn('[store] Failed to load localStorage data. Fallback to initial state.', error);
+    return createInitialState();
+  }
+}
+
+export function loadState({ storage, logger = console, key = STORAGE_KEY } = {}) {
+  if (!storage) {
+    throw new Error('storage is required');
+  }
+
+  try {
+    const raw = storage.getItem(key);
+    if (!raw) return createInitialState();
+    return parseStatePayload(raw, { logger });
+  } catch {
     return createInitialState();
   }
 }
@@ -76,4 +89,22 @@ export function saveState(state, { storage, key = STORAGE_KEY } = {}) {
   });
 
   storage.setItem(key, payload);
+}
+
+export function exportStateData(state) {
+  const safeState = {
+    ...createInitialState(),
+    ...state,
+  };
+
+  return JSON.stringify({
+    schemaVersion: SCHEMA_VERSION,
+    currentListId: safeState.currentListId,
+    lists: safeState.lists,
+    tasks: safeState.tasks,
+  });
+}
+
+export function importStateData(raw) {
+  return parseStatePayload(raw, { throwOnInvalid: true });
 }

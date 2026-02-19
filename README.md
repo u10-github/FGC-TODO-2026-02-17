@@ -56,6 +56,7 @@ npm run ab:close
 
 ## UX/UIの現在仕様
 - メイン表示はアクティブタスク中心（完了タスクは折りたたみアーカイブ）。
+- 左上はハンバーガーメニューで、`データをエクスポート` / `データをインポート` を提供します。
 - 上部に現在タスクリストを表示し、リスト作成/切替ができます（作成は自由記述1入力欄）。
 - 完了操作は確認後に実行され、5秒間「取り消し」できます。
 - 完了タスクは `削除 | 復活` を表示し、`削除` は確認後に永久削除されます。
@@ -64,6 +65,8 @@ npm run ab:close
 - アクセシビリティ: 明示フォーカス、live region、操作ボタンの `aria-label` を付与。
 
 ## 受け入れ条件の手動確認リスト
+- [ ] ハンバーガーメニューからデータをエクスポートできる
+- [ ] ハンバーガーメニューからデータをインポートでき、確認ダイアログ後に上書きされる
 - [ ] 自由記述1入力欄でタスクリストを作成できる（空文字/重複は不可）
 - [ ] タスクリストを切替すると、タスク表示がリスト単位で分離される
 - [ ] タスクを追加するとアクティブ一覧に表示され、count=0
@@ -83,4 +86,6 @@ npm run ab:close
 - REQ-UC6: `tests/tasks.test.js` (deleteTask), `tests/e2e/todo-ui.spec.js`
 - REQ-UC7: `tests/store.test.js`, `tests/e2e/todo-ui.spec.js`
 - REQ-UC8: `tests/tasks.test.js`, `tests/e2e/todo-ui.spec.js`
+- REQ-UC9: `tests/store.test.js`
+- REQ-UC10: `tests/store.test.js`, `tests/e2e/todo-ui.spec.js`
 - REQ-PERSIST-01 / REQ-EX-01: `tests/store.test.js`

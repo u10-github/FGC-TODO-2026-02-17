@@ -96,3 +96,31 @@ test('done task can be deleted permanently with confirmation', async ({ page }) 
   await page.getByRole('button', { name: '完了' }).click();
   await expect(page.locator('#done-list .task-item', { hasText: title })).toHaveCount(0);
 });
+
+test('can import backup data from hamburger menu', async ({ page }) => {
+  await page.goto('/index.html');
+
+  const raw = JSON.stringify({
+    schemaVersion: 2,
+    currentListId: 'l2',
+    lists: [
+      { id: 'default-list', name: 'タスクリスト', createdAt: 0 },
+      { id: 'l2', name: 'SF6 / リュウ', createdAt: 1 },
+    ],
+    tasks: [
+      { id: 't1', title: 'インポートされた課題', status: 'active', count: 0, listId: 'l2' },
+    ],
+  });
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await page.getByRole('menuitem', { name: 'データをインポート' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#import-file-input').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(raw),
+  });
+
+  await expect(page.locator('#list-switch-btn')).toHaveText('SF6 / リュウ');
+  await expect(page.locator('#active-list .task-item', { hasText: 'インポートされた課題' })).toHaveCount(1);
+});

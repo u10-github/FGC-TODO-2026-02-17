@@ -9,8 +9,12 @@
   <body>
     <main class="app">
       <header class="app-header">
-        <h1>タスク</h1>
+        <button id="menu-btn" class="menu-btn" type="button" aria-label="メニュー" aria-expanded="false">☰</button>
         <button id="list-switch-btn" class="list-switch-btn" type="button" aria-label="タスクリストを切り替え"></button>
+        <div id="menu-popover" class="menu-popover is-hidden" role="menu" aria-label="データ管理メニュー">
+          <button id="export-btn" class="menu-item-btn" type="button" role="menuitem">データをエクスポート</button>
+          <button id="import-btn" class="menu-item-btn" type="button" role="menuitem">データをインポート</button>
+        </div>
       </header>
 
       <nav class="tabs" aria-label="タスク表示切替">
@@ -56,6 +60,7 @@
 
     <div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>
     <p id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+    <input id="import-file-input" type="file" accept="application/json,.json" class="sr-only" />
 
     <script type="module" src="./src/ui/app.js"></script>
   </body>

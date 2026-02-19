@@ -39,3 +39,10 @@
 - UIにタスクリスト切替ボタンと管理シートを追加し、自由記述1入力欄で作成・切替可能にした。
 - リスト名の空文字/重複をUIでバリデーションし、エラーメッセージ表示を追加。
 - テストを TDD で追加更新（store/tasks unit + Playwright E2E）し、`npm test` / `npm run test:e2e` を通過。
+
+## 2026-02-19 (Hamburger menu + backup)
+- ヘッダー左のタイトルを廃止し、ハンバーガーメニューを追加。
+- メニュー項目を `データをエクスポート` / `データをインポート` の2つに限定して実装。
+- `store.js` にバックアップ用 `exportStateData` / `importStateData` を追加し、インポート時のスキーマ検証と v1->v2 移行を共通化。
+- インポート前に上書き確認ダイアログを表示し、成功/失敗を live region で通知。
+- `tests/store.test.js` と `tests/e2e/todo-ui.spec.js` を更新し、バックアップ機能を検証。

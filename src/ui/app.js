@@ -1,7 +1,12 @@
 import { addTask, completeTask, deleteTask, getTasksByList, incCount, resetCount, restoreTask } from '../core/tasks.js';
-import { loadState, saveState } from '../core/store.js';
+import { exportStateData, importStateData, loadState, saveState } from '../core/store.js';
 
 const els = {
+  menuBtn: document.getElementById('menu-btn'),
+  menuPopover: document.getElementById('menu-popover'),
+  exportBtn: document.getElementById('export-btn'),
+  importBtn: document.getElementById('import-btn'),
+  importFileInput: document.getElementById('import-file-input'),
   listSwitchBtn: document.getElementById('list-switch-btn'),
   tabActive: document.getElementById('tab-active'),
   tabDone: document.getElementById('tab-done'),
@@ -43,6 +48,11 @@ function commit(nextState) {
   state = nextState;
   saveState(state, { storage: window.localStorage });
   render();
+}
+
+function showMenu(show) {
+  els.menuPopover.classList.toggle('is-hidden', !show);
+  els.menuBtn.setAttribute('aria-expanded', String(show));
 }
 
 function render() {
@@ -121,6 +131,7 @@ function applyActionLabels() {
 }
 
 function showSheet() {
+  showMenu(false);
   els.sheet.classList.remove('is-hidden');
   els.listSheet.classList.add('is-hidden');
   els.backdrop.classList.remove('is-hidden');
@@ -155,6 +166,7 @@ function submitFromSheet() {
 }
 
 function showListSheet() {
+  showMenu(false);
   els.listSheet.classList.remove('is-hidden');
   els.sheet.classList.add('is-hidden');
   els.backdrop.classList.remove('is-hidden');
@@ -200,6 +212,46 @@ function announce(message) {
   els.liveRegion.textContent = message;
 }
 
+function exportBackup() {
+  const raw = exportStateData(state);
+  const blob = new Blob([raw], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const pad = (v) => String(v).padStart(2, '0');
+  const filename = `fgc-task-backup-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.json`;
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+  announce('バックアップを保存しました。');
+  showMenu(false);
+}
+
+function triggerImport() {
+  showMenu(false);
+  els.importFileInput.click();
+}
+
+async function handleImportFile(file) {
+  if (!file) return;
+  const confirmed = window.confirm('現在のデータを上書きします。続行しますか？');
+  if (!confirmed) return;
+
+  try {
+    const raw = await file.text();
+    const nextState = importStateData(raw);
+    commit(nextState);
+    announce('インポートが完了しました。');
+  } catch {
+    announce('インポートに失敗しました。JSON形式を確認してください。');
+  } finally {
+    els.importFileInput.value = '';
+  }
+}
+
 function showUndoToast(taskId, title) {
   clearTimeout(toastTimer);
   els.toast.innerHTML = `<span>「${escapeHtml(title)}」を完了にしました。</span><button type="button" data-action="undo" data-task-id="${taskId}">取り消し</button>`;
@@ -229,6 +281,16 @@ els.tabDone.addEventListener('click', () => {
   render();
 });
 
+els.menuBtn.addEventListener('click', () => {
+  const willOpen = els.menuPopover.classList.contains('is-hidden');
+  showMenu(willOpen);
+});
+els.exportBtn.addEventListener('click', exportBackup);
+els.importBtn.addEventListener('click', triggerImport);
+els.importFileInput.addEventListener('change', (event) => {
+  const file = event.target.files?.[0];
+  handleImportFile(file);
+});
 els.listSwitchBtn.addEventListener('click', showListSheet);
 els.fabAdd.addEventListener('click', showSheet);
 els.backdrop.addEventListener('click', hideSheet);
@@ -263,6 +325,10 @@ els.listItems.addEventListener('click', (event) => {
 });
 
 document.body.addEventListener('click', (event) => {
+  if (!event.target.closest('#menu-btn') && !event.target.closest('#menu-popover')) {
+    showMenu(false);
+  }
+
   const button = event.target.closest('button[data-action]');
   if (!button) return;
 
