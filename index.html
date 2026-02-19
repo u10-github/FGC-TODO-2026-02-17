@@ -7,49 +7,40 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <main class="container">
-      <h1>格闘ゲーム用タスク管理ツール</h1>
+    <main class="app">
+      <header class="app-header">
+        <h1>タスク</h1>
+      </header>
 
-      <section class="task-form" aria-labelledby="task-form-title">
-        <h2 id="task-form-title">タスク追加</h2>
-        <label for="task-title">タスク名</label>
-        <p class="help-text">例: 対空を10回成功 / 画面端コンボを5回成功</p>
-        <div class="task-form-row">
-          <input
-            id="task-title"
-            type="text"
-            placeholder="例: 対空を10回成功"
-            aria-describedby="task-help task-error"
-          />
-          <button id="add-task-btn" class="btn btn-primary" type="button">追加</button>
-        </div>
-        <p id="task-error" class="error is-hidden" role="alert">タスク名を入力してください。</p>
-      </section>
+      <nav class="tabs" aria-label="タスク表示切替">
+        <button id="tab-active" class="tab is-active" type="button" aria-selected="true">アクティブ</button>
+        <button id="tab-done" class="tab" type="button" aria-selected="false">完了</button>
+      </nav>
 
-      <section id="panel-active" class="panel" aria-labelledby="active-title">
-        <h2 id="active-title">アクティブタスク</h2>
+      <section id="panel-active" class="panel" aria-labelledby="tab-active">
         <ul id="active-list" class="task-list"></ul>
-        <p id="active-empty" class="empty">まずタスクを追加して練習を始めましょう。</p>
+        <p id="active-empty" class="empty">タスクがありません。右下の + から追加しましょう。</p>
       </section>
 
-      <section id="archive-panel" class="panel archive" aria-labelledby="archive-title">
-        <button
-          id="toggle-done-btn"
-          class="archive-toggle"
-          type="button"
-          aria-expanded="false"
-          aria-controls="done-region"
-        >
-          完了タスクを表示（0件）
-        </button>
-
-        <div id="done-region" class="is-hidden">
-          <h2 id="archive-title">完了タスク（アーカイブ）</h2>
-          <ul id="done-list" class="task-list"></ul>
-          <p id="done-empty" class="empty">完了タスクはありません。</p>
-        </div>
+      <section id="panel-done" class="panel is-hidden" aria-labelledby="tab-done">
+        <ul id="done-list" class="task-list"></ul>
+        <p id="done-empty" class="empty">完了タスクはありません。</p>
       </section>
     </main>
+
+    <button id="fab-add" class="fab" type="button" aria-label="タスクを追加">＋</button>
+
+    <div id="sheet-backdrop" class="sheet-backdrop is-hidden" aria-hidden="true"></div>
+    <section id="add-sheet" class="add-sheet is-hidden" aria-label="タスク追加シート">
+      <h2>タスクを追加</h2>
+      <label for="sheet-task-title">タスク名</label>
+      <input id="sheet-task-title" type="text" placeholder="例: 対空を10回成功" />
+      <p id="sheet-task-error" class="error is-hidden" role="alert">タスク名を入力してください。</p>
+      <div class="sheet-actions">
+        <button id="sheet-cancel" type="button">キャンセル</button>
+        <button id="sheet-submit" class="btn-primary" type="button">追加</button>
+      </div>
+    </section>
 
     <div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>
     <p id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></p>
