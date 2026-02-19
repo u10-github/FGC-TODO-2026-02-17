@@ -1,5 +1,10 @@
 # Todo
 
+## ブランチ運用
+- `develop` で計画・実装・検証を行う。
+- 完了後、`main` に反映する。
+- GitHub Pages 公開は `main` 固定のため、`main` は常に公開可能状態を維持する。
+
 ## 要件ID一覧
 - REQ-UC1: タスク作成（status=active / count=0）
 - REQ-UC2: `+1`で成功回数を増加（減算なし）

@@ -22,3 +22,8 @@
 - `tests/tasks.test.js` に REQ-UC6 のユニットテストを追加。
 - `tests/e2e/todo-ui.spec.js` に完了タスク削除のE2Eテストを追加。
 - `README.md`, `doc/Requirements.md`, `doc/Todo.md` を最新仕様へ同期。
+
+## 2026-02-19 (Branch workflow update)
+- 開発フローを `develop` 先行（実装・検証）→ `main` 反映に変更。
+- GitHub Pages の公開ブランチが `main` 固定であることを運用ルールとして明文化。
+- `README.md`, `doc/Requirements.md`, `doc/Todo.md` にブランチ運用ルールを追記。
