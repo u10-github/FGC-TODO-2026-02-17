@@ -216,3 +216,13 @@ test('mobile layout keeps long task title readable', async ({ page }) => {
   expect(metrics.titleWidth).toBeGreaterThan(160);
   expect(metrics.actionsTop).toBeGreaterThan(metrics.titleTop + 20);
 });
+
+test('does not show 全文表示 when text is not actually clamped', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  const title = '[22U後] 投げ>近H>溜め623H>近H (DA)>奥義';
+  await addTask(page, title);
+
+  const row = page.locator('.task-item', { hasText: title }).first();
+  await expect(row).toBeVisible();
+  await expect(row.locator('button[data-action="toggle-title"]')).toBeHidden();
+});

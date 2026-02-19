@@ -2,8 +2,6 @@ import { addTask, completeTask, deleteTask, getTasksByList, incCount, resetCount
 import { deleteList, renameList } from '../core/lists.js';
 import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
 
-const TITLE_COLLAPSE_THRESHOLD = 26;
-
 const els = {
   menuBtn: document.getElementById('menu-btn'),
   menuPopover: document.getElementById('menu-popover'),
@@ -97,18 +95,18 @@ function render() {
   els.panelActive.classList.toggle('is-hidden', !isActiveTab);
   els.panelDone.classList.toggle('is-hidden', isActiveTab);
 
+  syncTitleToggleVisibility();
   applyActionLabels();
 }
 
 function renderTask(task, done) {
   const expanded = expandedTaskIds.has(task.id);
-  const shouldShowToggle = task.title.length > TITLE_COLLAPSE_THRESHOLD;
 
   return `
     <li class="task-item" data-task-id="${task.id}">
       <div class="task-main">
-        <span class="task-title ${shouldShowToggle && !expanded ? 'is-clamped' : ''}">${escapeHtml(task.title)}</span>
-        ${shouldShowToggle ? `<button type="button" class="title-toggle" data-action="toggle-title">${expanded ? 'たたむ' : '全文表示'}</button>` : ''}
+        <span class="task-title ${expanded ? '' : 'is-clamped'}">${escapeHtml(task.title)}</span>
+        <button type="button" class="title-toggle is-hidden" data-action="toggle-title">全文表示</button>
       </div>
       <div class="task-actions">
         ${done
@@ -127,6 +125,33 @@ function renderTask(task, done) {
       </div>
     </li>
   `;
+}
+
+function syncTitleToggleVisibility() {
+  document.querySelectorAll('[data-task-id]').forEach((row) => {
+    const taskId = row.dataset.taskId;
+    if (!taskId) return;
+
+    const titleEl = row.querySelector('.task-title');
+    const toggleEl = row.querySelector('[data-action="toggle-title"]');
+    if (!titleEl || !toggleEl) return;
+
+    const expanded = expandedTaskIds.has(taskId);
+    titleEl.classList.toggle('is-clamped', !expanded);
+
+    titleEl.classList.add('is-clamped');
+    const canCollapse = titleEl.scrollHeight > titleEl.clientHeight + 1;
+    titleEl.classList.toggle('is-clamped', !expanded);
+
+    if (!canCollapse) {
+      expandedTaskIds.delete(taskId);
+      toggleEl.classList.add('is-hidden');
+      return;
+    }
+
+    toggleEl.classList.remove('is-hidden');
+    toggleEl.textContent = expanded ? 'たたむ' : '全文表示';
+  });
 }
 
 function formatSuccessLabel(count) {
