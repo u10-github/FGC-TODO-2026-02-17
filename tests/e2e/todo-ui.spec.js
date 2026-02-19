@@ -191,3 +191,28 @@ test('cannot delete the last remaining list', async ({ page }) => {
   await row.locator('button[data-list-action="more"]').click();
   await expect(row.locator('button[data-list-action="delete"]')).toBeDisabled();
 });
+
+test('mobile layout keeps long task title readable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const title = 'これはスマホ表示確認のための非常に長いタスク名です。操作ボタンに押し潰されず読み取れる必要があります。';
+  await addTask(page, title);
+
+  const row = page.locator('.task-item', { hasText: title }).first();
+  await expect(row).toBeVisible();
+
+  const metrics = await row.evaluate((el) => {
+    const titleEl = el.querySelector('.task-title');
+    const actionsEl = el.querySelector('.task-actions');
+    if (!titleEl || !actionsEl) throw new Error('task row elements are missing');
+    const titleRect = titleEl.getBoundingClientRect();
+    const actionsRect = actionsEl.getBoundingClientRect();
+    return {
+      titleWidth: titleRect.width,
+      titleTop: titleRect.top,
+      actionsTop: actionsRect.top,
+    };
+  });
+
+  expect(metrics.titleWidth).toBeGreaterThan(160);
+  expect(metrics.actionsTop).toBeGreaterThan(metrics.titleTop + 20);
+});
