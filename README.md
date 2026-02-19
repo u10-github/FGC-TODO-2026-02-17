@@ -33,6 +33,17 @@ UIを表示しながら確認:
 npm run test:e2e:headed
 ```
 
+### Agent Browser CLI
+`agent-browser` は Playwright と別ツールなので、依存インストール後にそのまま使えます。
+
+例:
+
+```bash
+npm run ab:open -- http://127.0.0.1:8000/index.html
+npm run ab:snapshot
+npm run ab:close
+```
+
 ## GitHub Pages 配置時の注意
 - 依存/ビルド不要のため、ルート配下の静的ファイルをそのまま配信可能。
 - `localStorage` はブラウザごとに保持されるため、端末間同期はされません。
