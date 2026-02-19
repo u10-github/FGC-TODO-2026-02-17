@@ -62,3 +62,35 @@ export function deleteTask(state, id) {
 export function getTasksByList(state, listId) {
   return state.tasks.filter((task) => task.listId === listId);
 }
+
+export function reorderActiveTask(state, listId, taskId, toIndex) {
+  const activeIds = state.tasks
+    .filter((task) => task.listId === listId && task.status === 'active')
+    .map((task) => task.id);
+  const fromIndex = activeIds.indexOf(taskId);
+  if (fromIndex < 0) return state;
+
+  const safeToIndex = Math.max(0, Math.min(toIndex, activeIds.length - 1));
+  if (fromIndex === safeToIndex) return state;
+
+  const reorderedIds = [...activeIds];
+  const [movedId] = reorderedIds.splice(fromIndex, 1);
+  reorderedIds.splice(safeToIndex, 0, movedId);
+
+  const activeById = new Map(
+    state.tasks
+      .filter((task) => task.listId === listId && task.status === 'active')
+      .map((task) => [task.id, task]),
+  );
+  let cursor = 0;
+
+  return {
+    ...state,
+    tasks: state.tasks.map((task) => {
+      if (task.listId !== listId || task.status !== 'active') return task;
+      const reorderedTask = activeById.get(reorderedIds[cursor]);
+      cursor += 1;
+      return reorderedTask ?? task;
+    }),
+  };
+}

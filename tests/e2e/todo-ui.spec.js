@@ -226,3 +226,45 @@ test('does not show 全文表示 when text is not actually clamped', async ({ pa
   await expect(row).toBeVisible();
   await expect(row.locator('button[data-action="toggle-title"]')).toBeHidden();
 });
+
+test('active tasks can be reordered by long press drag and persist after reload', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+
+  const seeded = {
+    schemaVersion: 2,
+    currentListId: 'default-list',
+    lists: [{ id: 'default-list', name: 'タスクリスト', createdAt: 0 }],
+    tasks: [
+      { id: 't1', title: 'タスクA', status: 'active', count: 0, listId: 'default-list' },
+      { id: 't2', title: 'タスクB', status: 'active', count: 0, listId: 'default-list' },
+      { id: 't3', title: 'タスクC', status: 'active', count: 0, listId: 'default-list' },
+    ],
+  };
+  await page.evaluate((payload) => window.localStorage.setItem('fg_task_manager_v1', JSON.stringify(payload)), seeded);
+  await page.reload();
+
+  const rows = page.locator('#active-list .task-item');
+  await expect(rows).toHaveCount(3);
+
+  const dragSource = rows.nth(0).locator('.task-main');
+  const dragTarget = rows.nth(2).locator('.task-main');
+  const sourceBox = await dragSource.boundingBox();
+  const targetBox = await dragTarget.boundingBox();
+  if (!sourceBox || !targetBox) throw new Error('drag target box not found');
+
+  await page.mouse.move(sourceBox.x + 8, sourceBox.y + 8);
+  await page.mouse.down();
+  await page.waitForTimeout(350);
+  await page.mouse.move(targetBox.x + 8, targetBox.y + targetBox.height - 6, { steps: 8 });
+  await page.mouse.up();
+
+  await expect(rows.nth(0).locator('.task-title')).toContainText('タスクB');
+  await expect(rows.nth(1).locator('.task-title')).toContainText('タスクC');
+  await expect(rows.nth(2).locator('.task-title')).toContainText('タスクA');
+
+  await page.reload();
+  const reloadedRows = page.locator('#active-list .task-item');
+  await expect(reloadedRows.nth(0).locator('.task-title')).toContainText('タスクB');
+  await expect(reloadedRows.nth(1).locator('.task-title')).toContainText('タスクC');
+  await expect(reloadedRows.nth(2).locator('.task-title')).toContainText('タスクA');
+});

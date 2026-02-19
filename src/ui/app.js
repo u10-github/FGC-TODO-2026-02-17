@@ -1,4 +1,13 @@
-import { addTask, completeTask, deleteTask, getTasksByList, incCount, resetCount, restoreTask } from '../core/tasks.js';
+import {
+  addTask,
+  completeTask,
+  deleteTask,
+  getTasksByList,
+  incCount,
+  reorderActiveTask,
+  resetCount,
+  restoreTask,
+} from '../core/tasks.js';
 import { deleteList, renameList } from '../core/lists.js';
 import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
 
@@ -38,6 +47,10 @@ let currentTab = 'active';
 let toastTimer = null;
 let listMenuId = null;
 const expandedTaskIds = new Set();
+const REORDER_LONG_PRESS_MS = 300;
+const REORDER_CANCEL_DISTANCE_PX = 8;
+let pendingReorder = null;
+let reorderState = null;
 
 function createListId() {
   return `list-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -51,6 +64,84 @@ function commit(nextState) {
   state = nextState;
   saveState(state, { storage: window.localStorage });
   render();
+}
+
+function cancelPendingReorder() {
+  if (!pendingReorder) return;
+  window.clearTimeout(pendingReorder.timerId);
+  pendingReorder = null;
+}
+
+function clearReorderStyles() {
+  els.activeList.querySelectorAll('.task-item').forEach((row) => {
+    row.classList.remove('is-reordering', 'is-drop-target');
+  });
+  document.body.classList.remove('is-reordering');
+}
+
+function getActiveTaskRows() {
+  return [...els.activeList.querySelectorAll('.task-item[data-task-id]')];
+}
+
+function resolveDropIndex(pointerY) {
+  const rows = getActiveTaskRows();
+  if (!rows.length) return 0;
+
+  for (let i = 0; i < rows.length; i += 1) {
+    const rect = rows[i].getBoundingClientRect();
+    if (pointerY < rect.top + rect.height / 2) return i;
+  }
+
+  return rows.length - 1;
+}
+
+function beginReorder(taskId, pointerId, pointerY) {
+  if (currentTab !== 'active') return;
+
+  const activeTasks = getTasksByList(state, state.currentListId).filter((task) => task.status === 'active');
+  const fromIndex = activeTasks.findIndex((task) => task.id === taskId);
+  if (fromIndex < 0) return;
+
+  reorderState = {
+    pointerId,
+    taskId,
+    fromIndex,
+    toIndex: fromIndex,
+  };
+
+  clearReorderStyles();
+  document.body.classList.add('is-reordering');
+  const rows = getActiveTaskRows();
+  rows[fromIndex]?.classList.add('is-reordering');
+
+  const targetIndex = resolveDropIndex(pointerY);
+  reorderState.toIndex = targetIndex;
+  rows[targetIndex]?.classList.add('is-drop-target');
+}
+
+function updateReorder(pointerY) {
+  if (!reorderState) return;
+
+  const nextIndex = resolveDropIndex(pointerY);
+  if (nextIndex === reorderState.toIndex) return;
+  reorderState.toIndex = nextIndex;
+
+  const rows = getActiveTaskRows();
+  rows.forEach((row) => row.classList.remove('is-drop-target'));
+  rows[nextIndex]?.classList.add('is-drop-target');
+}
+
+function finishReorder() {
+  if (!reorderState) return;
+
+  const { taskId, fromIndex, toIndex } = reorderState;
+  reorderState = null;
+  clearReorderStyles();
+
+  if (fromIndex === toIndex) return;
+
+  commit(reorderActiveTask(state, state.currentListId, taskId, toIndex));
+  announce('タスク順を並び替えました。');
 }
 
 function showMenu(show) {
@@ -415,6 +506,63 @@ els.listItems.addEventListener('click', (event) => {
     listMenuId = null;
     commit(deleteList(state, listId));
     announce(`リスト「${list.name}」を削除しました。`);
+  }
+});
+
+els.activeList.addEventListener('pointerdown', (event) => {
+  if (currentTab !== 'active') return;
+  if (event.button !== 0) return;
+
+  const row = event.target.closest('.task-item[data-task-id]');
+  const main = event.target.closest('.task-main');
+  if (!row || !main) return;
+
+  const taskId = row.dataset.taskId;
+  if (!taskId) return;
+
+  cancelPendingReorder();
+  pendingReorder = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    taskId,
+    timerId: window.setTimeout(() => {
+      beginReorder(taskId, event.pointerId, event.clientY);
+      pendingReorder = null;
+    }, REORDER_LONG_PRESS_MS),
+  };
+});
+
+document.addEventListener('pointermove', (event) => {
+  if (pendingReorder && event.pointerId === pendingReorder.pointerId) {
+    const moved = Math.hypot(event.clientX - pendingReorder.startX, event.clientY - pendingReorder.startY);
+    if (moved > REORDER_CANCEL_DISTANCE_PX) {
+      cancelPendingReorder();
+    }
+  }
+
+  if (!reorderState || event.pointerId !== reorderState.pointerId) return;
+  event.preventDefault();
+  updateReorder(event.clientY);
+});
+
+document.addEventListener('pointerup', (event) => {
+  if (pendingReorder && event.pointerId === pendingReorder.pointerId) {
+    cancelPendingReorder();
+    return;
+  }
+
+  if (!reorderState || event.pointerId !== reorderState.pointerId) return;
+  finishReorder();
+});
+
+document.addEventListener('pointercancel', (event) => {
+  if (pendingReorder && event.pointerId === pendingReorder.pointerId) {
+    cancelPendingReorder();
+  }
+  if (reorderState && event.pointerId === reorderState.pointerId) {
+    reorderState = null;
+    clearReorderStyles();
   }
 });
 

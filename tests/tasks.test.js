@@ -6,6 +6,7 @@ import {
   deleteTask,
   getTasksByList,
   incCount,
+  reorderActiveTask,
   resetCount,
   restoreTask,
 } from '../src/core/tasks.js';
@@ -94,4 +95,23 @@ test('REQ-UC8 getTasksByList returns only selected list tasks', () => {
   assert.equal(listTasks.length, 2);
   assert.equal(listTasks[0].id, '1');
   assert.equal(listTasks[1].id, '2');
+});
+
+test('reorderActiveTask reorders only active tasks in selected list', () => {
+  const seeded = {
+    schemaVersion: 2,
+    tasks: [
+      { id: 'a1', title: 'A1', status: 'active', count: 0, listId: 'l1' },
+      { id: 'a2', title: 'A2', status: 'active', count: 0, listId: 'l1' },
+      { id: 'd1', title: 'D1', status: 'done', count: 0, listId: 'l1' },
+      { id: 'b1', title: 'B1', status: 'active', count: 0, listId: 'l2' },
+      { id: 'a3', title: 'A3', status: 'active', count: 0, listId: 'l1' },
+    ],
+  };
+
+  const state = reorderActiveTask(seeded, 'l1', 'a1', 2);
+  assert.deepEqual(
+    state.tasks.map((task) => task.id),
+    ['a2', 'a3', 'd1', 'b1', 'a1'],
+  );
 });
