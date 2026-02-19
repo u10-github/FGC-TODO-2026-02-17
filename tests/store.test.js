@@ -52,7 +52,7 @@ test('saveState writes schemaVersion=2 payload including list data', () => {
   const state = {
     schemaVersion: 2,
     currentListId: 'l1',
-    lists: [{ id: 'l1', name: 'マイリスト', createdAt: 1 }],
+    lists: [{ id: 'l1', name: 'タスクリスト', createdAt: 1 }],
     tasks: [{ id: '1', title: 'A', status: 'active', count: 1, listId: 'l1' }],
   };
   saveState(state, { storage });

@@ -1,7 +1,7 @@
 export const STORAGE_KEY = 'fg_task_manager_v1';
 export const SCHEMA_VERSION = 2;
 export const DEFAULT_LIST_ID = 'default-list';
-export const DEFAULT_LIST_NAME = 'マイリスト';
+export const DEFAULT_LIST_NAME = 'タスクリスト';
 
 export function createInitialState() {
   return {
