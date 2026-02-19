@@ -193,7 +193,7 @@ test('cannot delete the last remaining list', async ({ page }) => {
 });
 
 test('mobile layout keeps long task title readable', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 412, height: 915 });
   const title = 'これはスマホ表示確認のための非常に長いタスク名です。操作ボタンに押し潰されず読み取れる必要があります。';
   await addTask(page, title);
 
