@@ -57,19 +57,24 @@ function renderTask(task, done) {
     <li class="task-item" data-task-id="${task.id}">
       <div class="task-main">
         <span class="task-title">${escapeHtml(task.title)}</span>
-        <span class="count">成功回数: ${task.count}</span>
       </div>
       <div class="task-actions">
         ${done
           ? '<button data-action="restore">復活</button>'
-          : `<div class="task-actions-primary"><button data-action="inc">+1</button></div>
-             <div class="task-actions-secondary">
+          : `<div class="task-actions-secondary">
                <button data-action="complete">完了</button>
                <button data-action="reset">リセット</button>
-             </div>`}
+             </div>
+             <div class="task-actions-primary"><button data-action="inc">${formatSuccessLabel(task.count)}</button></div>
+             `
+          }
       </div>
     </li>
   `;
+}
+
+function formatSuccessLabel(count) {
+  return count < 1 ? '成功！' : `${count}回`;
 }
 
 function applyActionLabels() {
@@ -77,7 +82,10 @@ function applyActionLabels() {
     const task = state.tasks.find((item) => item.id === row.dataset.taskId);
     if (!task) return;
 
-    row.querySelector('[data-action="inc"]')?.setAttribute('aria-label', `${task.title}の成功回数を1増やす`);
+    row.querySelector('[data-action="inc"]')?.setAttribute(
+      'aria-label',
+      `${task.title}の成功回数は現在${task.count}回。1増やす`,
+    );
     row.querySelector('[data-action="reset"]')?.setAttribute('aria-label', `${task.title}の成功回数を0に戻す`);
     row.querySelector('[data-action="complete"]')?.setAttribute('aria-label', `${task.title}を完了にする`);
     row.querySelector('[data-action="restore"]')?.setAttribute('aria-label', `${task.title}を復活する`);

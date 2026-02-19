@@ -15,14 +15,14 @@ test('main task flow works and persists after reload', async ({ page }) => {
 
   const taskRow = page.locator('.task-item', { hasText: title });
   await expect(taskRow).toBeVisible();
-  await expect(taskRow.getByText('成功回数: 0')).toBeVisible();
+  await expect(taskRow.locator('button[data-action="inc"]')).toHaveText('成功！');
 
   await taskRow.locator('button[data-action="inc"]').click();
-  await expect(taskRow.getByText('成功回数: 1')).toBeVisible();
+  await expect(taskRow.locator('button[data-action="inc"]')).toHaveText('1回');
 
   page.once('dialog', (dialog) => dialog.accept());
   await taskRow.locator('button[data-action="reset"]').click();
-  await expect(taskRow.getByText('成功回数: 0')).toBeVisible();
+  await expect(taskRow.locator('button[data-action="inc"]')).toHaveText('成功！');
 
   page.once('dialog', (dialog) => dialog.accept());
   await taskRow.locator('button[data-action="complete"]').click();
@@ -38,5 +38,5 @@ test('main task flow works and persists after reload', async ({ page }) => {
   await page.reload();
   const persistedRow = page.locator('.task-item', { hasText: title });
   await expect(persistedRow).toBeVisible();
-  await expect(persistedRow.getByText('成功回数: 0')).toBeVisible();
+  await expect(persistedRow.locator('button[data-action="inc"]')).toHaveText('成功！');
 });

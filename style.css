@@ -82,11 +82,6 @@ body {
   white-space: nowrap;
 }
 
-.count {
-  color: #9ca3af;
-  font-size: 0.88rem;
-}
-
 .task-actions {
   display: flex;
   gap: 0.7rem;
@@ -102,8 +97,8 @@ body {
 .task-actions-secondary {
   display: flex;
   gap: 0.4rem;
-  padding-left: 0.7rem;
-  border-left: 1px solid #2d3748;
+  padding-right: 0.7rem;
+  border-right: 1px solid #2d3748;
 }
 
 button {
@@ -137,7 +132,7 @@ button[data-action='reset'] {
 }
 
 button[data-action='inc'] {
-  min-width: 56px;
+  min-width: 72px;
   font-weight: 700;
 }
 
@@ -247,7 +242,7 @@ input:focus-visible {
 
   .task-actions-secondary {
     gap: 0.3rem;
-    padding-left: 0.55rem;
+    padding-right: 0.55rem;
   }
 
   button {
