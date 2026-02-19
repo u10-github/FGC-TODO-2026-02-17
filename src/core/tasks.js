@@ -5,6 +5,8 @@ export const REQ_IDS = {
   UC4: 'REQ-UC4',
   UC5: 'REQ-UC5',
   UC6: 'REQ-UC6',
+  UC7: 'REQ-UC7',
+  UC8: 'REQ-UC8',
 };
 
 function createId() {
@@ -18,15 +20,17 @@ function updateTask(state, id, updater) {
   };
 }
 
-export function addTask(state, title) {
+export function addTask(state, title, listId = state.currentListId) {
   const normalizedTitle = title.trim();
   if (!normalizedTitle) return state;
+  if (!listId) return state;
 
   const task = {
     id: createId(),
     title: normalizedTitle,
     status: 'active',
     count: 0,
+    listId,
   };
 
   return { ...state, tasks: [...state.tasks, task] };
@@ -53,4 +57,8 @@ export function deleteTask(state, id) {
     ...state,
     tasks: state.tasks.filter((task) => task.id !== id),
   };
+}
+
+export function getTasksByList(state, listId) {
+  return state.tasks.filter((task) => task.listId === listId);
 }

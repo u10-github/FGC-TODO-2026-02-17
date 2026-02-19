@@ -27,3 +27,15 @@
 - 開発フローを `develop` 先行（実装・検証）→ `main` 反映に変更。
 - GitHub Pages の公開ブランチが `main` 固定であることを運用ルールとして明文化。
 - `README.md`, `doc/Requirements.md`, `doc/Todo.md` にブランチ運用ルールを追記。
+
+## 2026-02-19 (Task list switch planning)
+- 1入力欄の自由記述でタスクリストを作成し、タスクリストを切替できる要件（REQ-UC7/REQ-UC8）を追加。
+- `Task` に `listId` を持たせ、`lists` と `currentListId` を保存するデータ構造へ拡張する方針を定義。
+- `README.md`, `doc/Requirements.md`, `doc/Todo.md` を先行更新して、次実装のトレーサビリティを準備。
+
+## 2026-02-19 (Task list switch implementation)
+- `store.js` を schemaVersion=2 に更新し、`lists` / `currentListId` / `task.listId` を保存。
+- schemaVersion=1 から v2 への移行（既存タスクをデフォルトリストへ割当）を実装。
+- UIにタスクリスト切替ボタンと管理シートを追加し、自由記述1入力欄で作成・切替可能にした。
+- リスト名の空文字/重複をUIでバリデーションし、エラーメッセージ表示を追加。
+- テストを TDD で追加更新（store/tasks unit + Playwright E2E）し、`npm test` / `npm run test:e2e` を通過。

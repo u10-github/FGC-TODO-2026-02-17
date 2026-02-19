@@ -56,6 +56,7 @@ npm run ab:close
 
 ## UX/UIの現在仕様
 - メイン表示はアクティブタスク中心（完了タスクは折りたたみアーカイブ）。
+- 上部に現在タスクリストを表示し、リスト作成/切替ができます（作成は自由記述1入力欄）。
 - 完了操作は確認後に実行され、5秒間「取り消し」できます。
 - 完了タスクは `削除 | 復活` を表示し、`削除` は確認後に永久削除されます。
 - `+1` / `復活` を主操作として強調し、`リセット` / `完了` は誤操作防止の確認付き。
@@ -63,6 +64,8 @@ npm run ab:close
 - アクセシビリティ: 明示フォーカス、live region、操作ボタンの `aria-label` を付与。
 
 ## 受け入れ条件の手動確認リスト
+- [ ] 自由記述1入力欄でタスクリストを作成できる（空文字/重複は不可）
+- [ ] タスクリストを切替すると、タスク表示がリスト単位で分離される
 - [ ] タスクを追加するとアクティブ一覧に表示され、count=0
 - [ ] `+1` でcountが増える（減算UIがない）
 - [ ] `リセット` で対象タスクのみcount=0
@@ -78,4 +81,6 @@ npm run ab:close
 - REQ-UC4: `tests/tasks.test.js` (completeTask)
 - REQ-UC5: `tests/tasks.test.js` (restoreTask)
 - REQ-UC6: `tests/tasks.test.js` (deleteTask), `tests/e2e/todo-ui.spec.js`
+- REQ-UC7: `tests/store.test.js`, `tests/e2e/todo-ui.spec.js`
+- REQ-UC8: `tests/tasks.test.js`, `tests/e2e/todo-ui.spec.js`
 - REQ-PERSIST-01 / REQ-EX-01: `tests/store.test.js`

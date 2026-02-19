@@ -1,7 +1,8 @@
-import { addTask, completeTask, deleteTask, incCount, resetCount, restoreTask } from '../core/tasks.js';
+import { addTask, completeTask, deleteTask, getTasksByList, incCount, resetCount, restoreTask } from '../core/tasks.js';
 import { loadState, saveState } from '../core/store.js';
 
 const els = {
+  listSwitchBtn: document.getElementById('list-switch-btn'),
   tabActive: document.getElementById('tab-active'),
   tabDone: document.getElementById('tab-done'),
   panelActive: document.getElementById('panel-active'),
@@ -17,6 +18,11 @@ const els = {
   sheetError: document.getElementById('sheet-task-error'),
   sheetCancel: document.getElementById('sheet-cancel'),
   sheetSubmit: document.getElementById('sheet-submit'),
+  listSheet: document.getElementById('list-sheet'),
+  listInput: document.getElementById('list-name-input'),
+  listCreateBtn: document.getElementById('list-create-btn'),
+  listError: document.getElementById('list-error'),
+  listItems: document.getElementById('list-items'),
   toast: document.getElementById('toast'),
   liveRegion: document.getElementById('live-region'),
 };
@@ -25,6 +31,14 @@ let state = loadState({ storage: window.localStorage });
 let currentTab = 'active';
 let toastTimer = null;
 
+function createListId() {
+  return `list-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function getCurrentList() {
+  return state.lists.find((list) => list.id === state.currentListId) ?? state.lists[0];
+}
+
 function commit(nextState) {
   state = nextState;
   saveState(state, { storage: window.localStorage });
@@ -32,11 +46,20 @@ function commit(nextState) {
 }
 
 function render() {
-  const activeTasks = state.tasks.filter((task) => task.status === 'active');
-  const doneTasks = state.tasks.filter((task) => task.status === 'done');
+  const currentList = getCurrentList();
+  const listTasks = getTasksByList(state, currentList.id);
+  const activeTasks = listTasks.filter((task) => task.status === 'active');
+  const doneTasks = listTasks.filter((task) => task.status === 'done');
 
   els.activeList.innerHTML = activeTasks.map((task) => renderTask(task, false)).join('');
   els.doneList.innerHTML = doneTasks.map((task) => renderTask(task, true)).join('');
+  els.listSwitchBtn.textContent = currentList.name;
+  els.listItems.innerHTML = state.lists
+    .map(
+      (list) =>
+        `<li><button class="list-item-btn${list.id === currentList.id ? ' is-current' : ''}" type="button" data-list-id="${list.id}">${escapeHtml(list.name)}</button></li>`,
+    )
+    .join('');
 
   els.activeEmpty.classList.toggle('is-hidden', activeTasks.length > 0);
   els.doneEmpty.classList.toggle('is-hidden', doneTasks.length > 0);
@@ -99,15 +122,19 @@ function applyActionLabels() {
 
 function showSheet() {
   els.sheet.classList.remove('is-hidden');
+  els.listSheet.classList.add('is-hidden');
   els.backdrop.classList.remove('is-hidden');
   els.sheetInput.focus();
 }
 
 function hideSheet() {
   els.sheet.classList.add('is-hidden');
+  els.listSheet.classList.add('is-hidden');
   els.backdrop.classList.add('is-hidden');
   els.sheetInput.value = '';
+  els.listInput.value = '';
   showSheetError(false);
+  showListError(false, '');
 }
 
 function showSheetError(show) {
@@ -116,7 +143,7 @@ function showSheetError(show) {
 
 function submitFromSheet() {
   const beforeCount = state.tasks.length;
-  const nextState = addTask(state, els.sheetInput.value);
+  const nextState = addTask(state, els.sheetInput.value, state.currentListId);
   if (nextState.tasks.length === beforeCount) {
     showSheetError(true);
     return;
@@ -124,6 +151,48 @@ function submitFromSheet() {
   commit(nextState);
   const addedTask = nextState.tasks[nextState.tasks.length - 1];
   announce(`タスク「${addedTask.title}」を追加しました。`);
+  hideSheet();
+}
+
+function showListSheet() {
+  els.listSheet.classList.remove('is-hidden');
+  els.sheet.classList.add('is-hidden');
+  els.backdrop.classList.remove('is-hidden');
+  els.listInput.focus();
+}
+
+function showListError(show, message) {
+  els.listError.classList.toggle('is-hidden', !show);
+  if (show) {
+    els.listError.textContent = message;
+  }
+}
+
+function createTaskList() {
+  const normalizedName = els.listInput.value.trim();
+  if (!normalizedName) {
+    showListError(true, 'リスト名を入力してください。');
+    return;
+  }
+
+  const exists = state.lists.some((list) => list.name === normalizedName);
+  if (exists) {
+    showListError(true, '同名のリストは作成できません。');
+    return;
+  }
+
+  const list = {
+    id: createListId(),
+    name: normalizedName,
+    createdAt: Date.now(),
+  };
+
+  commit({
+    ...state,
+    currentListId: list.id,
+    lists: [...state.lists, list],
+  });
+  announce(`リスト「${list.name}」を作成しました。`);
   hideSheet();
 }
 
@@ -160,6 +229,7 @@ els.tabDone.addEventListener('click', () => {
   render();
 });
 
+els.listSwitchBtn.addEventListener('click', showListSheet);
 els.fabAdd.addEventListener('click', showSheet);
 els.backdrop.addEventListener('click', hideSheet);
 els.sheetCancel.addEventListener('click', hideSheet);
@@ -170,6 +240,26 @@ els.sheetInput.addEventListener('keydown', (event) => {
 });
 els.sheetInput.addEventListener('input', () => {
   if (els.sheetInput.value.trim()) showSheetError(false);
+});
+els.listCreateBtn.addEventListener('click', createTaskList);
+els.listInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') createTaskList();
+  if (event.key === 'Escape') hideSheet();
+});
+els.listInput.addEventListener('input', () => {
+  if (els.listInput.value.trim()) showListError(false, '');
+});
+els.listItems.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-list-id]');
+  if (!button) return;
+  const nextListId = button.dataset.listId;
+  if (!nextListId || nextListId === state.currentListId) {
+    hideSheet();
+    return;
+  }
+  commit({ ...state, currentListId: nextListId });
+  announce(`リストを切り替えました。`);
+  hideSheet();
 });
 
 document.body.addEventListener('click', (event) => {
