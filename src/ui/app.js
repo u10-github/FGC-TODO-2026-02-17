@@ -1,4 +1,4 @@
-import { addTask, completeTask, incCount, resetCount, restoreTask } from '../core/tasks.js';
+import { addTask, completeTask, deleteTask, incCount, resetCount, restoreTask } from '../core/tasks.js';
 import { loadState, saveState } from '../core/store.js';
 
 const els = {
@@ -60,7 +60,11 @@ function renderTask(task, done) {
       </div>
       <div class="task-actions">
         ${done
-          ? '<button data-action="restore">復活</button>'
+          ? `<div class="task-actions-done">
+               <button data-action="delete">削除</button>
+               <span class="task-action-separator" aria-hidden="true">|</span>
+               <button data-action="restore">復活</button>
+             </div>`
           : `<div class="task-actions-secondary">
                <button data-action="complete">完了</button>
                <button data-action="reset">リセット</button>
@@ -88,6 +92,7 @@ function applyActionLabels() {
     );
     row.querySelector('[data-action="reset"]')?.setAttribute('aria-label', `${task.title}の成功回数を0に戻す`);
     row.querySelector('[data-action="complete"]')?.setAttribute('aria-label', `${task.title}を完了にする`);
+    row.querySelector('[data-action="delete"]')?.setAttribute('aria-label', `${task.title}を削除する`);
     row.querySelector('[data-action="restore"]')?.setAttribute('aria-label', `${task.title}を復活する`);
   });
 }
@@ -211,6 +216,12 @@ document.body.addEventListener('click', (event) => {
   if (action === 'restore') {
     commit(restoreTask(state, taskId));
     announce(`「${task.title}」を復活しました。`);
+  }
+
+  if (action === 'delete') {
+    if (!window.confirm(`「${task.title}」を削除しますか？この操作は取り消せません。`)) return;
+    commit(deleteTask(state, taskId));
+    announce(`「${task.title}」を削除しました。`);
   }
 });
 

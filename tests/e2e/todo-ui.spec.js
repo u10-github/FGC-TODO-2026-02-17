@@ -40,3 +40,26 @@ test('main task flow works and persists after reload', async ({ page }) => {
   await expect(persistedRow).toBeVisible();
   await expect(persistedRow.locator('button[data-action="inc"]')).toHaveText('成功！');
 });
+
+test('done task can be deleted permanently with confirmation', async ({ page }) => {
+  await page.goto('/index.html');
+
+  const title = `DEL-${Date.now()}`;
+  await addTask(page, title);
+
+  const activeRow = page.locator('#active-list .task-item', { hasText: title });
+  page.once('dialog', (dialog) => dialog.accept());
+  await activeRow.locator('button[data-action="complete"]').click();
+
+  await page.getByRole('button', { name: '完了' }).click();
+  const doneRow = page.locator('#done-list .task-item', { hasText: title });
+  await expect(doneRow).toBeVisible();
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await doneRow.locator('button[data-action="delete"]').click();
+  await expect(page.locator('#done-list .task-item', { hasText: title })).toHaveCount(0);
+
+  await page.reload();
+  await page.getByRole('button', { name: '完了' }).click();
+  await expect(page.locator('#done-list .task-item', { hasText: title })).toHaveCount(0);
+});

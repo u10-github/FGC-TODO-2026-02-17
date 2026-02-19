@@ -4,6 +4,7 @@ export const REQ_IDS = {
   UC3: 'REQ-UC3',
   UC4: 'REQ-UC4',
   UC5: 'REQ-UC5',
+  UC6: 'REQ-UC6',
 };
 
 function createId() {
@@ -45,4 +46,11 @@ export function completeTask(state, id) {
 
 export function restoreTask(state, id) {
   return updateTask(state, id, (task) => ({ ...task, status: 'active' }));
+}
+
+export function deleteTask(state, id) {
+  return {
+    ...state,
+    tasks: state.tasks.filter((task) => task.id !== id),
+  };
 }

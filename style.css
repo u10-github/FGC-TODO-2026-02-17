@@ -101,6 +101,16 @@ body {
   border-right: 1px solid #2d3748;
 }
 
+.task-actions-done {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.task-action-separator {
+  color: #64748b;
+}
+
 button {
   border: 1px solid #3c4658;
   border-radius: 10px;
@@ -129,6 +139,12 @@ button[data-action='reset'] {
   background: #321c17;
   border-color: #9b4b3f;
   color: #fecaca;
+}
+
+button[data-action='delete'] {
+  background: #2a1419;
+  border-color: #7f1d2d;
+  color: #fecdd3;
 }
 
 button[data-action='inc'] {

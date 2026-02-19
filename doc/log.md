@@ -15,3 +15,10 @@
 - 破壊的操作（リセット・完了）に確認を追加。
 - 完了後に取り消し可能なトースト（5秒）を追加。
 - 空入力エラー表示、live region、aria-label、フォーカス可視化を追加。
+
+## 2026-02-19 (Done task deletion)
+- 完了タスクに `削除 | 復活` を追加し、削除前に確認ダイアログを表示するよう変更。
+- `deleteTask` をコア関数として追加し、確認後は localStorage から永久削除される仕様を実装。
+- `tests/tasks.test.js` に REQ-UC6 のユニットテストを追加。
+- `tests/e2e/todo-ui.spec.js` に完了タスク削除のE2Eテストを追加。
+- `README.md`, `doc/Requirements.md`, `doc/Todo.md` を最新仕様へ同期。

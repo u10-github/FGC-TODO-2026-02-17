@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   addTask,
   completeTask,
+  deleteTask,
   incCount,
   resetCount,
   restoreTask,
@@ -56,4 +57,17 @@ test('REQ-UC5 restoreTask returns to active and preserves count', () => {
   const state = restoreTask(seeded, '1');
   assert.equal(state.tasks[0].status, 'active');
   assert.equal(state.tasks[0].count, 8);
+});
+
+test('REQ-UC6 deleteTask permanently removes selected task', () => {
+  const seeded = {
+    schemaVersion: 1,
+    tasks: [
+      { id: '1', title: 'A', status: 'done', count: 3 },
+      { id: '2', title: 'B', status: 'done', count: 5 },
+    ],
+  };
+  const state = deleteTask(seeded, '1');
+  assert.equal(state.tasks.length, 1);
+  assert.equal(state.tasks[0].id, '2');
 });

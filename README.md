@@ -51,6 +51,7 @@ npm run ab:close
 ## UX/UIの現在仕様
 - メイン表示はアクティブタスク中心（完了タスクは折りたたみアーカイブ）。
 - 完了操作は確認後に実行され、5秒間「取り消し」できます。
+- 完了タスクは `削除 | 復活` を表示し、`削除` は確認後に永久削除されます。
 - `+1` / `復活` を主操作として強調し、`リセット` / `完了` は誤操作防止の確認付き。
 - 追加時の空入力はエラーメッセージを表示。
 - アクセシビリティ: 明示フォーカス、live region、操作ボタンの `aria-label` を付与。
@@ -61,6 +62,7 @@ npm run ab:close
 - [ ] `リセット` で対象タスクのみcount=0
 - [ ] `完了` でアーカイブへ移動
 - [ ] `復活` でアクティブへ戻り、count保持
+- [ ] 完了タスクの `削除` で確認後に一覧から消え、リロード後も復元されない
 - [ ] リロードしてもタスク/状態/countが保持
 
 ## 要件IDとテスト
@@ -69,4 +71,5 @@ npm run ab:close
 - REQ-UC3: `tests/tasks.test.js` (resetCount)
 - REQ-UC4: `tests/tasks.test.js` (completeTask)
 - REQ-UC5: `tests/tasks.test.js` (restoreTask)
+- REQ-UC6: `tests/tasks.test.js` (deleteTask), `tests/e2e/todo-ui.spec.js`
 - REQ-PERSIST-01 / REQ-EX-01: `tests/store.test.js`
