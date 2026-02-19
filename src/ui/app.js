@@ -1,4 +1,5 @@
 import { addTask, completeTask, deleteTask, getTasksByList, incCount, resetCount, restoreTask } from '../core/tasks.js';
+import { deleteList, renameList } from '../core/lists.js';
 import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
 
 const els = {
@@ -35,6 +36,7 @@ const els = {
 let state = loadState({ storage: window.localStorage });
 let currentTab = 'active';
 let toastTimer = null;
+let listMenuId = null;
 
 function createListId() {
   return `list-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -66,8 +68,18 @@ function render() {
   els.listSwitchBtn.textContent = currentList.name;
   els.listItems.innerHTML = state.lists
     .map(
-      (list) =>
-        `<li><button class="list-item-btn${list.id === currentList.id ? ' is-current' : ''}" type="button" data-list-id="${list.id}">${escapeHtml(list.name)}</button></li>`,
+      (list) => {
+        const isCurrent = list.id === currentList.id;
+        const isMenuOpen = list.id === listMenuId;
+        return `<li class="list-row">
+          <button class="list-item-btn${isCurrent ? ' is-current' : ''}" type="button" data-list-action="switch" data-list-id="${list.id}">${escapeHtml(list.name)}</button>
+          <button class="list-more-btn" type="button" data-list-action="more" data-list-id="${list.id}" aria-label="${escapeHtml(list.name)}の操作を開く" aria-expanded="${String(isMenuOpen)}">...</button>
+          <div class="list-row-menu${isMenuOpen ? '' : ' is-hidden'}">
+            <button class="list-row-menu-btn" type="button" data-list-action="rename" data-list-id="${list.id}">名前変更</button>
+            <button class="list-row-menu-btn is-danger" type="button" data-list-action="delete" data-list-id="${list.id}" ${state.lists.length <= 1 ? 'disabled' : ''}>削除</button>
+          </div>
+        </li>`;
+      },
     )
     .join('');
 
@@ -132,6 +144,7 @@ function applyActionLabels() {
 
 function showSheet() {
   showMenu(false);
+  listMenuId = null;
   els.sheet.classList.remove('is-hidden');
   els.listSheet.classList.add('is-hidden');
   els.backdrop.classList.remove('is-hidden');
@@ -139,6 +152,7 @@ function showSheet() {
 }
 
 function hideSheet() {
+  listMenuId = null;
   els.sheet.classList.add('is-hidden');
   els.listSheet.classList.add('is-hidden');
   els.backdrop.classList.add('is-hidden');
@@ -167,6 +181,7 @@ function submitFromSheet() {
 
 function showListSheet() {
   showMenu(false);
+  listMenuId = null;
   els.listSheet.classList.remove('is-hidden');
   els.sheet.classList.add('is-hidden');
   els.backdrop.classList.remove('is-hidden');
@@ -313,21 +328,70 @@ els.listInput.addEventListener('input', () => {
   if (els.listInput.value.trim()) showListError(false, '');
 });
 els.listItems.addEventListener('click', (event) => {
-  const button = event.target.closest('button[data-list-id]');
+  event.stopPropagation();
+  const button = event.target.closest('button[data-list-action]');
   if (!button) return;
-  const nextListId = button.dataset.listId;
-  if (!nextListId || nextListId === state.currentListId) {
+  const listId = button.dataset.listId;
+  if (!listId) return;
+  const action = button.dataset.listAction;
+  const list = state.lists.find((item) => item.id === listId);
+  if (!list) return;
+
+  if (action === 'switch') {
+    if (listId === state.currentListId) {
+      hideSheet();
+      return;
+    }
+    listMenuId = null;
+    commit({ ...state, currentListId: listId });
+    announce(`リストを切り替えました。`);
     hideSheet();
     return;
   }
-  commit({ ...state, currentListId: nextListId });
-  announce(`リストを切り替えました。`);
-  hideSheet();
+
+  if (action === 'more') {
+    listMenuId = listMenuId === listId ? null : listId;
+    render();
+    return;
+  }
+
+  if (action === 'rename') {
+    const candidate = window.prompt('新しいリスト名を入力してください。', list.name);
+    if (candidate === null) return;
+    const normalizedName = candidate.trim();
+    if (!normalizedName) {
+      showListError(true, 'リスト名を入力してください。');
+      return;
+    }
+    if (state.lists.some((item) => item.id !== listId && item.name === normalizedName)) {
+      showListError(true, '同名のリストは作成できません。');
+      return;
+    }
+    listMenuId = null;
+    commit(renameList(state, listId, normalizedName));
+    announce(`リスト名を変更しました。`);
+    return;
+  }
+
+  if (action === 'delete') {
+    if (state.lists.length <= 1) {
+      showListError(true, '最後の1件は削除できません。');
+      return;
+    }
+    if (!window.confirm(`「${list.name}」を削除しますか？このリストのタスクも削除されます。`)) return;
+    listMenuId = null;
+    commit(deleteList(state, listId));
+    announce(`リスト「${list.name}」を削除しました。`);
+  }
 });
 
 document.body.addEventListener('click', (event) => {
   if (!event.target.closest('#menu-btn') && !event.target.closest('#menu-popover')) {
     showMenu(false);
+  }
+  if (listMenuId && !event.target.closest('#list-items')) {
+    listMenuId = null;
+    render();
   }
 
   const button = event.target.closest('button[data-action]');
