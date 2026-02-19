@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "pw:install": "PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright} playwright install chromium",
+    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright} playwright test",
+    "test:e2e:headed": "PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright} playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
   }
 }

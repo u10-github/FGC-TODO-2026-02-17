@@ -77,7 +77,9 @@ body {
   display: block;
   font-size: 1.1rem;
   margin-bottom: 0.28rem;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .count {
@@ -87,9 +89,21 @@ body {
 
 .task-actions {
   display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  gap: 0.7rem;
+  flex-wrap: nowrap;
   justify-content: flex-end;
+  align-items: center;
+}
+
+.task-actions-primary {
+  display: flex;
+}
+
+.task-actions-secondary {
+  display: flex;
+  gap: 0.4rem;
+  padding-left: 0.7rem;
+  border-left: 1px solid #2d3748;
 }
 
 button {
@@ -97,9 +111,10 @@ button {
   border-radius: 10px;
   background: #151b27;
   color: #e5e7eb;
-  min-height: 44px;
-  padding: 0.42rem 0.72rem;
+  min-height: 38px;
+  padding: 0.34rem 0.64rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 button[data-action='inc'],
@@ -118,6 +133,12 @@ button[data-action='complete'] {
 button[data-action='reset'] {
   background: #321c17;
   border-color: #9b4b3f;
+  color: #fecaca;
+}
+
+button[data-action='inc'] {
+  min-width: 56px;
+  font-weight: 700;
 }
 
 button:focus-visible,
@@ -216,6 +237,22 @@ input:focus-visible {
 .is-hidden { display: none; }
 
 @media (max-width: 680px) {
-  .task-item { grid-template-columns: 1fr; }
-  .task-actions { justify-content: flex-start; }
+  .task-title {
+    font-size: 1rem;
+  }
+
+  .task-actions {
+    gap: 0.55rem;
+  }
+
+  .task-actions-secondary {
+    gap: 0.3rem;
+    padding-left: 0.55rem;
+  }
+
+  button {
+    min-height: 36px;
+    padding: 0.3rem 0.52rem;
+    font-size: 0.87rem;
+  }
 }

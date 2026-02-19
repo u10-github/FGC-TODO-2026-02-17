@@ -62,7 +62,11 @@ function renderTask(task, done) {
       <div class="task-actions">
         ${done
           ? '<button data-action="restore">復活</button>'
-          : '<button data-action="inc">+1</button><button data-action="reset">リセット</button><button data-action="complete">完了</button>'}
+          : `<div class="task-actions-primary"><button data-action="inc">+1</button></div>
+             <div class="task-actions-secondary">
+               <button data-action="complete">完了</button>
+               <button data-action="reset">リセット</button>
+             </div>`}
       </div>
     </li>
   `;

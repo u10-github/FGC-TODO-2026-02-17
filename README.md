@@ -14,6 +14,25 @@ Node.js 18+ を想定。
 node --test
 ```
 
+### E2Eテスト（Playwright）
+初回のみブラウザをインストール:
+
+```bash
+npm run pw:install
+```
+
+E2Eを実行:
+
+```bash
+npm run test:e2e
+```
+
+UIを表示しながら確認:
+
+```bash
+npm run test:e2e:headed
+```
+
 ## GitHub Pages 配置時の注意
 - 依存/ビルド不要のため、ルート配下の静的ファイルをそのまま配信可能。
 - `localStorage` はブラウザごとに保持されるため、端末間同期はされません。
