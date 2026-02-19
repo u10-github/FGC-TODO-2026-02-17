@@ -20,6 +20,22 @@ test('loadState returns initial state when empty', () => {
   assert.deepEqual(state, createInitialState());
 });
 
+test('loadState migrates schemaVersion=1 data into default task list', () => {
+  const storage = new InMemoryStorage({
+    [STORAGE_KEY]: JSON.stringify({
+      schemaVersion: 1,
+      tasks: [{ id: '1', title: 'A', status: 'active', count: 2 }],
+    }),
+  });
+
+  const state = loadState({ storage });
+  assert.equal(state.schemaVersion, 2);
+  assert.equal(state.lists.length, 1);
+  assert.equal(state.currentListId, state.lists[0].id);
+  assert.equal(state.tasks.length, 1);
+  assert.equal(state.tasks[0].listId, state.currentListId);
+});
+
 test('loadState falls back and warns when JSON is broken', () => {
   const storage = new InMemoryStorage({ [STORAGE_KEY]: '{oops' });
   let warned = false;
@@ -31,11 +47,20 @@ test('loadState falls back and warns when JSON is broken', () => {
   assert.equal(warned, true);
 });
 
-test('saveState writes schemaVersion and tasks', () => {
+test('saveState writes schemaVersion=2 payload including list data', () => {
   const storage = new InMemoryStorage();
-  saveState({ schemaVersion: 1, tasks: [{ id: '1', title: 'A', status: 'active', count: 1 }] }, { storage });
+  const state = {
+    schemaVersion: 2,
+    currentListId: 'l1',
+    lists: [{ id: 'l1', name: 'タスクリスト', createdAt: 1 }],
+    tasks: [{ id: '1', title: 'A', status: 'active', count: 1, listId: 'l1' }],
+  };
+  saveState(state, { storage });
 
   const stored = JSON.parse(storage.getItem(STORAGE_KEY));
-  assert.equal(stored.schemaVersion, 1);
+  assert.equal(stored.schemaVersion, 2);
+  assert.equal(stored.currentListId, 'l1');
+  assert.equal(stored.lists.length, 1);
   assert.equal(stored.tasks.length, 1);
+  assert.equal(stored.tasks[0].listId, 'l1');
 });

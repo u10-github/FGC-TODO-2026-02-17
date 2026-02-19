@@ -10,6 +10,7 @@
     <main class="app">
       <header class="app-header">
         <h1>タスク</h1>
+        <button id="list-switch-btn" class="list-switch-btn" type="button" aria-label="タスクリストを切り替え"></button>
       </header>
 
       <nav class="tabs" aria-label="タスク表示切替">
@@ -40,6 +41,17 @@
         <button id="sheet-cancel" type="button">キャンセル</button>
         <button id="sheet-submit" class="btn-primary" type="button">追加</button>
       </div>
+    </section>
+
+    <section id="list-sheet" class="add-sheet is-hidden" aria-label="タスクリスト管理シート">
+      <h2>タスクリストを切り替え</h2>
+      <label for="list-name-input">リスト名</label>
+      <div class="list-create-row">
+        <input id="list-name-input" type="text" placeholder="例: SF6 / リュウ" />
+        <button id="list-create-btn" class="btn-primary" type="button">作成</button>
+      </div>
+      <p id="list-error" class="error is-hidden" role="alert">リスト名を入力してください。</p>
+      <ul id="list-items" class="list-items"></ul>
     </section>
 
     <div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>

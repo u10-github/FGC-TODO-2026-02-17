@@ -6,6 +6,16 @@ async function addTask(page, title) {
   await page.getByRole('button', { name: '追加', exact: true }).click();
 }
 
+async function openListSheet(page) {
+  await page.getByRole('button', { name: 'タスクリストを切り替え' }).click();
+}
+
+async function createTaskList(page, name) {
+  await openListSheet(page);
+  await page.getByLabel('リスト名').fill(name);
+  await page.getByRole('button', { name: '作成', exact: true }).click();
+}
+
 test('main task flow works and persists after reload', async ({ page }) => {
   await page.goto('/index.html');
 
@@ -39,6 +49,29 @@ test('main task flow works and persists after reload', async ({ page }) => {
   const persistedRow = page.locator('.task-item', { hasText: title });
   await expect(persistedRow).toBeVisible();
   await expect(persistedRow.locator('button[data-action="inc"]')).toHaveText('成功！');
+});
+
+test('task lists can be created and switched with isolated tasks', async ({ page }) => {
+  await page.goto('/index.html');
+
+  const listA = `ListA-${Date.now()}`;
+  const listB = `ListB-${Date.now()}`;
+  const taskA = `TaskA-${Date.now()}`;
+  const taskB = `TaskB-${Date.now()}`;
+
+  await createTaskList(page, listA);
+  await addTask(page, taskA);
+  await expect(page.locator('#active-list .task-item', { hasText: taskA })).toHaveCount(1);
+
+  await createTaskList(page, listB);
+  await expect(page.locator('#active-list .task-item', { hasText: taskA })).toHaveCount(0);
+  await addTask(page, taskB);
+  await expect(page.locator('#active-list .task-item', { hasText: taskB })).toHaveCount(1);
+
+  await openListSheet(page);
+  await page.getByRole('button', { name: listA, exact: true }).click();
+  await expect(page.locator('#active-list .task-item', { hasText: taskA })).toHaveCount(1);
+  await expect(page.locator('#active-list .task-item', { hasText: taskB })).toHaveCount(0);
 });
 
 test('done task can be deleted permanently with confirmation', async ({ page }) => {
