@@ -17,23 +17,49 @@ body {
   padding: 1rem 1rem 6rem;
 }
 
-.app-header h1 {
-  margin: 0.5rem 0 1rem;
-  font-size: 2rem;
-}
-
 .app-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.menu-btn {
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0;
+  font-size: 1.2rem;
 }
 
 .list-switch-btn {
   min-height: 40px;
-  max-width: 62%;
+  max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-left: auto;
+}
+
+.menu-popover {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  min-width: 225px;
+  background: #111827;
+  border: 1px solid #2b3342;
+  border-radius: 12px;
+  padding: 0.3rem;
+  display: grid;
+  gap: 0.2rem;
+  z-index: 10;
+}
+
+.menu-item-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
 }
 
 .tabs {
@@ -245,6 +271,46 @@ input:focus-visible {
   text-align: left;
 }
 
+.list-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.list-more-btn {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+
+.list-row-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.18rem);
+  min-width: 140px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 0.22rem;
+  display: grid;
+  gap: 0.18rem;
+  z-index: 12;
+}
+
+.list-row-menu-btn {
+  width: 100%;
+  text-align: left;
+  min-height: 34px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.list-row-menu-btn.is-danger {
+  color: #fecaca;
+}
+
 .list-item-btn.is-current {
   border-color: #60a5fa;
 }
@@ -288,12 +354,12 @@ input:focus-visible {
 .is-hidden { display: none; }
 
 @media (max-width: 680px) {
-  .app-header h1 {
-    font-size: 1.65rem;
+  .list-switch-btn {
+    max-width: 62%;
   }
 
-  .list-switch-btn {
-    max-width: 56%;
+  .menu-popover {
+    min-width: 200px;
   }
 
   .task-title {

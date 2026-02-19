@@ -16,9 +16,17 @@ async function createTaskList(page, name) {
   await page.getByRole('button', { name: '作成', exact: true }).click();
 }
 
-test('main task flow works and persists after reload', async ({ page }) => {
-  await page.goto('/index.html');
+function listRow(page, name) {
+  return page.locator('.list-row').filter({ hasText: name });
+}
 
+test.beforeEach(async ({ page }) => {
+  await page.goto('/index.html');
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+});
+
+test('main task flow works and persists after reload', async ({ page }) => {
   const title = `E2E-${Date.now()}`;
 
   await addTask(page, title);
@@ -52,8 +60,6 @@ test('main task flow works and persists after reload', async ({ page }) => {
 });
 
 test('task lists can be created and switched with isolated tasks', async ({ page }) => {
-  await page.goto('/index.html');
-
   const listA = `ListA-${Date.now()}`;
   const listB = `ListB-${Date.now()}`;
   const taskA = `TaskA-${Date.now()}`;
@@ -75,8 +81,6 @@ test('task lists can be created and switched with isolated tasks', async ({ page
 });
 
 test('done task can be deleted permanently with confirmation', async ({ page }) => {
-  await page.goto('/index.html');
-
   const title = `DEL-${Date.now()}`;
   await addTask(page, title);
 
@@ -95,4 +99,95 @@ test('done task can be deleted permanently with confirmation', async ({ page }) 
   await page.reload();
   await page.getByRole('button', { name: '完了' }).click();
   await expect(page.locator('#done-list .task-item', { hasText: title })).toHaveCount(0);
+});
+
+test('can import backup data from hamburger menu', async ({ page }) => {
+  const raw = JSON.stringify({
+    schemaVersion: 2,
+    currentListId: 'l2',
+    lists: [
+      { id: 'default-list', name: 'タスクリスト', createdAt: 0 },
+      { id: 'l2', name: 'SF6 / リュウ', createdAt: 1 },
+    ],
+    tasks: [
+      { id: 't1', title: 'インポートされた課題', status: 'active', count: 0, listId: 'l2' },
+    ],
+  });
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await page.getByRole('menuitem', { name: 'データをインポート' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#import-file-input').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(raw),
+  });
+
+  await expect(page.locator('#list-switch-btn')).toHaveText('SF6 / リュウ');
+  await expect(page.locator('#active-list .task-item', { hasText: 'インポートされた課題' })).toHaveCount(1);
+});
+
+test('import with duplicated list name appends as name(1)', async ({ page }) => {
+  const raw = JSON.stringify({
+    schemaVersion: 2,
+    currentListId: 'l1',
+    lists: [{ id: 'l1', name: 'タスクリスト', createdAt: 1 }],
+    tasks: [{ id: 't1', title: '重複名タスク', status: 'active', count: 0, listId: 'l1' }],
+  });
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await page.getByRole('menuitem', { name: 'データをインポート' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#import-file-input').setInputFiles({
+    name: 'backup-duplicate.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(raw),
+  });
+
+  await expect(page.locator('#list-switch-btn')).toHaveText('タスクリスト(1)');
+  await expect(page.locator('#active-list .task-item', { hasText: '重複名タスク' })).toHaveCount(1);
+});
+
+test('list can be renamed from row menu', async ({ page }) => {
+  const original = `元リスト-${Date.now()}`;
+  const renamed = `変更後リスト-${Date.now()}`;
+
+  await createTaskList(page, original);
+  await openListSheet(page);
+
+  const row = listRow(page, original);
+  await row.locator('button[data-list-action="more"]').click();
+  await expect(row.locator('.list-row-menu')).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept(renamed));
+  await row.locator('button[data-list-action="rename"]').click();
+
+  await expect(page.locator('.list-item-btn', { hasText: renamed })).toHaveCount(1);
+  await expect(page.locator('#list-switch-btn')).toHaveText(renamed);
+});
+
+test('list can be deleted from row menu and its tasks are removed', async ({ page }) => {
+  const listName = `削除対象-${Date.now()}`;
+  const taskName = `削除対象タスク-${Date.now()}`;
+
+  await createTaskList(page, listName);
+  await addTask(page, taskName);
+  await expect(page.locator('#active-list .task-item', { hasText: taskName })).toHaveCount(1);
+
+  await openListSheet(page);
+  const row = listRow(page, listName);
+  await row.locator('button[data-list-action="more"]').click();
+  await expect(row.locator('.list-row-menu')).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await row.locator('button[data-list-action="delete"]').click();
+
+  await expect(page.locator('.list-item-btn', { hasText: listName })).toHaveCount(0);
+  await expect(page.locator('#list-switch-btn')).not.toHaveText(listName);
+  await expect(page.locator('#active-list .task-item', { hasText: taskName })).toHaveCount(0);
+});
+
+test('cannot delete the last remaining list', async ({ page }) => {
+  await openListSheet(page);
+  const row = listRow(page, 'タスクリスト');
+  await row.locator('button[data-list-action="more"]').click();
+  await expect(row.locator('button[data-list-action="delete"]')).toBeDisabled();
 });
