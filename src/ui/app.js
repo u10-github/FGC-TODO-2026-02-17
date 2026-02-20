@@ -40,6 +40,7 @@ const els = {
   listCreateBtn: document.getElementById('list-create-btn'),
   listError: document.getElementById('list-error'),
   listItems: document.getElementById('list-items'),
+  listSheetClose: document.getElementById('list-sheet-close'),
   toast: document.getElementById('toast'),
   liveRegion: document.getElementById('live-region'),
 };
@@ -476,6 +477,7 @@ els.listInput.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') createTaskList();
   if (event.key === 'Escape') hideSheet();
 });
+els.listSheetClose?.addEventListener('click', hideSheet);
 els.listInput.addEventListener('input', () => {
   if (els.listInput.value.trim()) showListError(false, '');
 });
@@ -568,6 +570,12 @@ document.addEventListener('pointercancel', (event) => {
   }
 });
 
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !els.listSheet.classList.contains('is-hidden')) {
+    hideSheet();
+  }
+});
+
 document.body.addEventListener('click', (event) => {
   if (!event.target.closest('#menu-btn') && !event.target.closest('#menu-popover')) {
     showMenu(false);
@@ -576,7 +584,6 @@ document.body.addEventListener('click', (event) => {
     listMenuId = null;
     render();
   }
-
   const button = event.target.closest('button[data-action]');
   if (!button) return;
 

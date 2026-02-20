@@ -8,6 +8,7 @@ async function addTask(page, title) {
 
 async function openListSheet(page) {
   await page.getByRole('button', { name: 'タスクリストを切り替え' }).click();
+  await expect(page.locator('#list-sheet')).toBeVisible();
 }
 
 async function createTaskList(page, name) {
