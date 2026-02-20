@@ -193,7 +193,9 @@ function render() {
   els.reorderToggleBtn.disabled = !canReorder;
   els.reorderToggleBtn.classList.toggle('is-active', isReorderMode);
   els.reorderToggleBtn.setAttribute('aria-pressed', String(isReorderMode));
-  els.reorderToggleBtn.textContent = isReorderMode ? '並び替え完了' : '順序入れ替え';
+  const reorderToggleLabel = isReorderMode ? '並び替え完了' : '順序入れ替え';
+  els.reorderToggleBtn.textContent = reorderToggleLabel;
+  els.reorderToggleBtn.setAttribute('aria-label', reorderToggleLabel);
   els.reorderHelp.classList.toggle('is-hidden', !isReorderMode);
   document.body.classList.toggle('is-reorder-mode', isReorderMode);
 
