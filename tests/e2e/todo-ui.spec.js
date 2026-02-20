@@ -227,7 +227,7 @@ test('does not show 全文表示 when text is not actually clamped', async ({ pa
   await expect(row.locator('button[data-action="toggle-title"]')).toBeHidden();
 });
 
-test('active tasks can be reordered by long press drag and persist after reload', async ({ page }) => {
+test('active tasks can be reordered only in reorder mode and persist after reload', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
 
   const seeded = {
@@ -246,21 +246,41 @@ test('active tasks can be reordered by long press drag and persist after reload'
   const rows = page.locator('#active-list .task-item');
   await expect(rows).toHaveCount(3);
 
-  const dragSource = rows.nth(0).locator('.task-main');
-  const dragTarget = rows.nth(2).locator('.task-main');
+  const mainSource = rows.nth(0).locator('.task-main');
+  const mainTarget = rows.nth(2).locator('.task-main');
+  const mainSourceBox = await mainSource.boundingBox();
+  const mainTargetBox = await mainTarget.boundingBox();
+  if (!mainSourceBox || !mainTargetBox) throw new Error('main drag target box not found');
+
+  await page.mouse.move(mainSourceBox.x + 8, mainSourceBox.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(mainTargetBox.x + 8, mainTargetBox.y + mainTargetBox.height - 6, { steps: 8 });
+  await page.mouse.up();
+
+  await expect(rows.nth(0).locator('.task-title')).toContainText('タスクA');
+  await expect(rows.nth(1).locator('.task-title')).toContainText('タスクB');
+  await expect(rows.nth(2).locator('.task-title')).toContainText('タスクC');
+
+  await page.getByRole('button', { name: '順序入れ替え' }).click();
+  await expect(page.locator('.task-drag-handle').first()).toBeVisible();
+
+  const dragSource = rows.nth(0).locator('.task-drag-handle');
+  const dragTarget = rows.nth(2).locator('.task-drag-handle');
   const sourceBox = await dragSource.boundingBox();
   const targetBox = await dragTarget.boundingBox();
-  if (!sourceBox || !targetBox) throw new Error('drag target box not found');
+  if (!sourceBox || !targetBox) throw new Error('drag handle box not found');
 
-  await page.mouse.move(sourceBox.x + 8, sourceBox.y + 8);
+  await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await page.mouse.down();
-  await page.waitForTimeout(350);
-  await page.mouse.move(targetBox.x + 8, targetBox.y + targetBox.height - 6, { steps: 8 });
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 8 });
   await page.mouse.up();
 
   await expect(rows.nth(0).locator('.task-title')).toContainText('タスクB');
   await expect(rows.nth(1).locator('.task-title')).toContainText('タスクC');
   await expect(rows.nth(2).locator('.task-title')).toContainText('タスクA');
+
+  await page.getByRole('button', { name: '並び替え完了' }).click();
+  await expect(page.locator('.task-drag-handle').first()).toBeHidden();
 
   await page.reload();
   const reloadedRows = page.locator('#active-list .task-item');

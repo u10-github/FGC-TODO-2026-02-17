@@ -18,9 +18,22 @@
       </header>
 
       <nav class="tabs" aria-label="タスク表示切替">
-        <button id="tab-active" class="tab is-active" type="button" aria-selected="true">アクティブ</button>
-        <button id="tab-done" class="tab" type="button" aria-selected="false">完了</button>
+        <div class="tabs-main">
+          <button id="tab-active" class="tab is-active" type="button" aria-selected="true">アクティブ</button>
+          <button id="tab-done" class="tab" type="button" aria-selected="false">完了</button>
+        </div>
+        <button
+          id="reorder-toggle-btn"
+          class="reorder-toggle-btn"
+          type="button"
+          aria-pressed="false"
+          aria-label="タスクの順序入れ替えモード"
+        >
+          順序入れ替え
+        </button>
       </nav>
+
+      <p id="reorder-help" class="reorder-help is-hidden">順序入れ替え中です。タスクの右端ハンドルをドラッグしてください。</p>
 
       <section id="panel-active" class="panel" aria-labelledby="tab-active">
         <ul id="active-list" class="task-list"></ul>

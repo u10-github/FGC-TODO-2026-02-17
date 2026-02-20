@@ -64,9 +64,16 @@ body {
 
 .tabs {
   display: flex;
-  gap: 0.5rem;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.65rem;
   border-bottom: 1px solid #263041;
-  margin-bottom: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.tabs-main {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .tab {
@@ -86,6 +93,28 @@ body {
   border-bottom-color: #93c5fd;
 }
 
+
+.reorder-toggle-btn {
+  min-height: 40px;
+  padding-inline: 0.75rem;
+  margin-bottom: 0.4rem;
+  border-color: #42506a;
+  background: #0f172a;
+  color: #cbd5e1;
+}
+
+.reorder-toggle-btn.is-active {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  color: #eff6ff;
+}
+
+.reorder-help {
+  margin: 0 0 0.8rem;
+  color: #93c5fd;
+  font-size: 0.92rem;
+}
+
 .panel {
   background: #050914;
   border: 1px solid #222b3a;
@@ -103,7 +132,8 @@ body {
 
 .task-item {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'handle main actions';
   gap: 0.6rem;
   align-items: center;
   border: 1px solid #293244;
@@ -112,6 +142,7 @@ body {
 }
 
 .task-main {
+  grid-area: main;
   min-width: 0;
   touch-action: pan-y;
 }
@@ -143,6 +174,7 @@ body {
 }
 
 .task-actions {
+  grid-area: actions;
   display: flex;
   gap: 0.7rem;
   flex-wrap: nowrap;
@@ -165,6 +197,37 @@ body {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+}
+
+
+.task-drag-handle {
+  grid-area: handle;
+  align-self: start;
+  min-width: 40px;
+  min-height: 40px;
+  margin-top: 0.08rem;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  border-color: #374151;
+  background: #0b1220;
+  color: #cbd5e1;
+  touch-action: none;
+  cursor: grab;
+}
+
+.task-drag-handle:active {
+  cursor: grabbing;
+}
+
+body.is-reorder-mode .task-item {
+  border-color: #314158;
+}
+
+body.is-reorder-mode .task-actions-secondary,
+body.is-reorder-mode .task-actions-primary,
+body.is-reorder-mode .title-toggle {
+  opacity: 0.55;
 }
 
 .task-action-separator {
@@ -400,7 +463,10 @@ input:focus-visible {
   }
 
   .task-item {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'handle main'
+      'handle actions';
     align-items: stretch;
   }
 
@@ -423,5 +489,16 @@ input:focus-visible {
     min-height: 36px;
     padding: 0.3rem 0.52rem;
     font-size: 0.87rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .tabs {
+    align-items: center;
+  }
+
+  .reorder-toggle-btn {
+    margin-bottom: 0.2rem;
+    font-size: 0.9rem;
   }
 }

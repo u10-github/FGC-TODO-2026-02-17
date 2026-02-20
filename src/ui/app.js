@@ -20,6 +20,8 @@ const els = {
   listSwitchBtn: document.getElementById('list-switch-btn'),
   tabActive: document.getElementById('tab-active'),
   tabDone: document.getElementById('tab-done'),
+  reorderToggleBtn: document.getElementById('reorder-toggle-btn'),
+  reorderHelp: document.getElementById('reorder-help'),
   panelActive: document.getElementById('panel-active'),
   panelDone: document.getElementById('panel-done'),
   activeList: document.getElementById('active-list'),
@@ -47,10 +49,8 @@ let currentTab = 'active';
 let toastTimer = null;
 let listMenuId = null;
 const expandedTaskIds = new Set();
-const REORDER_LONG_PRESS_MS = 300;
-const REORDER_CANCEL_DISTANCE_PX = 8;
-let pendingReorder = null;
 let reorderState = null;
+let isReorderMode = false;
 
 function createListId() {
   return `list-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -66,10 +66,9 @@ function commit(nextState) {
   render();
 }
 
-function cancelPendingReorder() {
-  if (!pendingReorder) return;
-  window.clearTimeout(pendingReorder.timerId);
-  pendingReorder = null;
+function cancelReorderInteraction() {
+  reorderState = null;
+  clearReorderStyles();
 }
 
 function clearReorderStyles() {
@@ -96,7 +95,7 @@ function resolveDropIndex(pointerY) {
 }
 
 function beginReorder(taskId, pointerId, pointerY) {
-  if (currentTab !== 'active') return;
+  if (currentTab !== 'active' || !isReorderMode) return;
 
   const activeTasks = getTasksByList(state, state.currentListId).filter((task) => task.status === 'active');
   const fromIndex = activeTasks.findIndex((task) => task.id === taskId);
@@ -186,18 +185,34 @@ function render() {
   els.panelActive.classList.toggle('is-hidden', !isActiveTab);
   els.panelDone.classList.toggle('is-hidden', isActiveTab);
 
+  const canReorder = isActiveTab && activeTasks.length > 1;
+  if (!canReorder && isReorderMode) {
+    isReorderMode = false;
+    cancelReorderInteraction();
+  }
+  els.reorderToggleBtn.disabled = !canReorder;
+  els.reorderToggleBtn.classList.toggle('is-active', isReorderMode);
+  els.reorderToggleBtn.setAttribute('aria-pressed', String(isReorderMode));
+  els.reorderToggleBtn.textContent = isReorderMode ? '並び替え完了' : '順序入れ替え';
+  els.reorderHelp.classList.toggle('is-hidden', !isReorderMode);
+  document.body.classList.toggle('is-reorder-mode', isReorderMode);
+
   syncTitleToggleVisibility();
   applyActionLabels();
 }
 
 function renderTask(task, done) {
   const expanded = expandedTaskIds.has(task.id);
+  const disabledAttr = !done && isReorderMode ? 'disabled' : '';
 
   return `
     <li class="task-item" data-task-id="${task.id}">
+      ${done
+        ? ''
+        : `<button class="task-drag-handle${isReorderMode ? '' : ' is-hidden'}" data-action="drag-handle" aria-label="${escapeHtml(task.title)}をドラッグして並び替え" title="ドラッグで並び替え" type="button">≡</button>`}
       <div class="task-main">
         <span class="task-title ${expanded ? '' : 'is-clamped'}">${escapeHtml(task.title)}</span>
-        <button type="button" class="title-toggle is-hidden" data-action="toggle-title">全文表示</button>
+        <button type="button" class="title-toggle is-hidden" data-action="toggle-title" ${!done && isReorderMode ? 'disabled' : ''}>全文表示</button>
       </div>
       <div class="task-actions">
         ${done
@@ -207,11 +222,10 @@ function renderTask(task, done) {
                <button data-action="restore">復活</button>
              </div>`
           : `<div class="task-actions-secondary">
-               <button data-action="complete">完了</button>
-               <button data-action="reset">リセット</button>
+               <button data-action="complete" ${disabledAttr}>完了</button>
+               <button data-action="reset" ${disabledAttr}>リセット</button>
              </div>
-             <div class="task-actions-primary"><button data-action="inc">${formatSuccessLabel(task.count)}</button></div>
-             `
+             <div class="task-actions-primary"><button data-action="inc" ${disabledAttr}>${formatSuccessLabel(task.count)}</button></div>`
           }
       </div>
     </li>
@@ -418,6 +432,18 @@ els.tabActive.addEventListener('click', () => {
 
 els.tabDone.addEventListener('click', () => {
   currentTab = 'done';
+  if (isReorderMode) {
+    isReorderMode = false;
+    cancelReorderInteraction();
+  }
+  render();
+});
+
+els.reorderToggleBtn.addEventListener('click', () => {
+  if (els.reorderToggleBtn.disabled) return;
+  isReorderMode = !isReorderMode;
+  cancelReorderInteraction();
+  announce(isReorderMode ? '順序入れ替えモードを開始しました。' : '順序入れ替えモードを終了しました。');
   render();
 });
 
@@ -510,59 +536,33 @@ els.listItems.addEventListener('click', (event) => {
 });
 
 els.activeList.addEventListener('pointerdown', (event) => {
-  if (currentTab !== 'active') return;
+  if (currentTab !== 'active' || !isReorderMode) return;
   if (event.button !== 0) return;
 
   const row = event.target.closest('.task-item[data-task-id]');
-  const main = event.target.closest('.task-main');
-  if (!row || !main) return;
+  const handle = event.target.closest('[data-action="drag-handle"]');
+  if (!row || !handle) return;
 
   const taskId = row.dataset.taskId;
   if (!taskId) return;
 
-  cancelPendingReorder();
-  pendingReorder = {
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    startY: event.clientY,
-    taskId,
-    timerId: window.setTimeout(() => {
-      beginReorder(taskId, event.pointerId, event.clientY);
-      pendingReorder = null;
-    }, REORDER_LONG_PRESS_MS),
-  };
+  beginReorder(taskId, event.pointerId, event.clientY);
 });
 
 document.addEventListener('pointermove', (event) => {
-  if (pendingReorder && event.pointerId === pendingReorder.pointerId) {
-    const moved = Math.hypot(event.clientX - pendingReorder.startX, event.clientY - pendingReorder.startY);
-    if (moved > REORDER_CANCEL_DISTANCE_PX) {
-      cancelPendingReorder();
-    }
-  }
-
   if (!reorderState || event.pointerId !== reorderState.pointerId) return;
   event.preventDefault();
   updateReorder(event.clientY);
 });
 
 document.addEventListener('pointerup', (event) => {
-  if (pendingReorder && event.pointerId === pendingReorder.pointerId) {
-    cancelPendingReorder();
-    return;
-  }
-
   if (!reorderState || event.pointerId !== reorderState.pointerId) return;
   finishReorder();
 });
 
 document.addEventListener('pointercancel', (event) => {
-  if (pendingReorder && event.pointerId === pendingReorder.pointerId) {
-    cancelPendingReorder();
-  }
   if (reorderState && event.pointerId === reorderState.pointerId) {
-    reorderState = null;
-    clearReorderStyles();
+    cancelReorderInteraction();
   }
 });
 
