@@ -66,6 +66,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  flex-wrap: wrap;
   gap: 0.65rem;
   border-bottom: 1px solid #263041;
   margin-bottom: 0.35rem;
@@ -74,6 +75,8 @@ body {
 .tabs-main {
   display: flex;
   gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .tab {
@@ -98,9 +101,12 @@ body {
   min-height: 40px;
   padding-inline: 0.75rem;
   margin-bottom: 0.4rem;
+  margin-left: auto;
   border-color: #42506a;
   background: #0f172a;
   color: #cbd5e1;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .reorder-toggle-btn.is-active {
@@ -495,9 +501,15 @@ input:focus-visible {
 @media (max-width: 640px) {
   .tabs {
     align-items: center;
+    row-gap: 0.35rem;
+  }
+
+  .tabs-main {
+    width: 100%;
   }
 
   .reorder-toggle-btn {
+    margin-left: 0;
     margin-bottom: 0.2rem;
     font-size: 0.9rem;
   }
