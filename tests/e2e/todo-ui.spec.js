@@ -217,6 +217,44 @@ test('mobile layout keeps long task title readable', async ({ page }) => {
   expect(metrics.actionsTop).toBeGreaterThan(metrics.titleTop + 20);
 });
 
+test('mobile layout places tabs and reorder button on one row', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+
+  const seeded = {
+    schemaVersion: 2,
+    currentListId: 'default-list',
+    lists: [{ id: 'default-list', name: 'タスクリスト', createdAt: 0 }],
+    tasks: [
+      { id: 't1', title: 'タスクA', status: 'active', count: 0, listId: 'default-list' },
+      { id: 't2', title: 'タスクB', status: 'active', count: 0, listId: 'default-list' },
+    ],
+  };
+  await page.evaluate((payload) => window.localStorage.setItem('fg_task_manager_v1', JSON.stringify(payload)), seeded);
+  await page.reload();
+
+  const activeTab = page.locator('#tab-active');
+  const reorderButton = page.locator('#reorder-toggle-btn');
+  await expect(activeTab).toBeVisible();
+  await expect(reorderButton).toBeVisible();
+  await expect(reorderButton).toBeEnabled();
+
+  const metrics = await page.evaluate(() => {
+    const tab = document.getElementById('tab-active');
+    const reorder = document.getElementById('reorder-toggle-btn');
+    if (!tab || !reorder) throw new Error('tab or reorder button not found');
+    const tabRect = tab.getBoundingClientRect();
+    const reorderRect = reorder.getBoundingClientRect();
+    return {
+      topDiff: Math.abs(tabRect.top - reorderRect.top),
+      tabRight: tabRect.right,
+      reorderLeft: reorderRect.left,
+    };
+  });
+
+  expect(metrics.topDiff).toBeLessThan(8);
+  expect(metrics.reorderLeft).toBeGreaterThan(metrics.tabRight);
+});
+
 test('does not show 全文表示 when text is not actually clamped', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   const title = '[22U後] 投げ>近H>溜め623H>近H (DA)>奥義';

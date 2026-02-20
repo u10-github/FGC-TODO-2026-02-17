@@ -59,3 +59,14 @@
 - 最後の1件は削除不可とし、UIで削除ボタンを無効化。
 - `src/core/lists.js` と `tests/lists.test.js` を追加し、リスト操作の純粋関数を単体検証。
 - `tests/e2e/todo-ui.spec.js` に `...` メニュー経由の名前変更/削除のE2Eを追加。
+
+## 2026-02-20 (Android表示ずれのSkill化)
+- Android実機（本番）とローカル取得スクリーンショットの表示ずれを調査する手順を Skill として追加。
+- `skills/android-layout-drift/SKILL.md` を新規作成し、切り分け順序を `viewport → DPR → フォント → safe-area/fixed → 配信差` に標準化。
+- 証跡採取用の実機コンソールスニペットと、修正後検証手順（`npm test` / 必要時 `npm run test:e2e`）を明記。
+
+## 2026-02-20 (Android: タブと順序入れ替えを同一行化)
+- Android表示で `アクティブ/完了` と `順序入れ替え` が別行になる問題に対応。
+- `reorder-toggle-btn` をヘッダーからタブナビゲーションへ移動し、`tabs` を左右配置レイアウトへ変更。
+- E2Eに「モバイルでタブと順序入れ替えが同一行」を検証するテストを追加し、`npm test` / `npm run test:e2e` を通過。
+- `artifacts/android-repro/local-android-pixel7-after-tabs-reorder-row.png` を再取得して表示を確認。

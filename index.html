@@ -11,15 +11,6 @@
       <header class="app-header">
         <button id="menu-btn" class="menu-btn" type="button" aria-label="メニュー" aria-expanded="false">☰</button>
         <button id="list-switch-btn" class="list-switch-btn" type="button" aria-label="タスクリストを切り替え"></button>
-        <button
-          id="reorder-toggle-btn"
-          class="reorder-toggle-btn"
-          type="button"
-          aria-pressed="false"
-          aria-label="タスクの順序入れ替えモード"
-        >
-          順序入れ替え
-        </button>
         <div id="menu-popover" class="menu-popover is-hidden" role="menu" aria-label="データ管理メニュー">
           <button id="export-btn" class="menu-item-btn" type="button" role="menuitem">データをエクスポート</button>
           <button id="import-btn" class="menu-item-btn" type="button" role="menuitem">データをインポート</button>
@@ -31,6 +22,15 @@
           <button id="tab-active" class="tab is-active" type="button" aria-selected="true">アクティブ</button>
           <button id="tab-done" class="tab" type="button" aria-selected="false">完了</button>
         </div>
+        <button
+          id="reorder-toggle-btn"
+          class="reorder-toggle-btn"
+          type="button"
+          aria-pressed="false"
+          aria-label="タスクの順序入れ替えモード"
+        >
+          順序入れ替え
+        </button>
       </nav>
 
       <p id="reorder-help" class="reorder-help is-hidden">順序入れ替え中です。タスクの右端ハンドルをドラッグしてください。</p>

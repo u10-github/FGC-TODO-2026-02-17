@@ -21,9 +21,7 @@ body {
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    'menu list'
-    'menu reorder';
+  grid-template-areas: 'menu list';
   align-items: center;
   gap: 0.5rem 0.8rem;
   margin-bottom: 0.75rem;
@@ -70,7 +68,8 @@ body {
 
 .tabs {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.65rem;
   border-bottom: 1px solid #263041;
   margin-bottom: 0.35rem;
@@ -79,6 +78,7 @@ body {
 .tabs-main {
   display: flex;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .tab {
@@ -100,8 +100,7 @@ body {
 
 
 .reorder-toggle-btn {
-  grid-area: reorder;
-  justify-self: end;
+  flex-shrink: 0;
   min-height: 40px;
   padding-inline: 0.75rem;
   margin: 0;
