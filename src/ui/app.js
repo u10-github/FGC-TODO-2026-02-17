@@ -3,7 +3,9 @@ import {
   completeTask,
   deleteTask,
   getTasksByList,
+  copyTasksToList,
   incCount,
+  moveTasksToList,
   reorderActiveTask,
   resetCount,
   restoreTask,
@@ -20,8 +22,10 @@ const els = {
   listSwitchBtn: document.getElementById('list-switch-btn'),
   tabActive: document.getElementById('tab-active'),
   tabDone: document.getElementById('tab-done'),
+  selectionToggleBtn: document.getElementById('selection-toggle-btn'),
   reorderToggleBtn: document.getElementById('reorder-toggle-btn'),
   reorderHelp: document.getElementById('reorder-help'),
+  selectionHelp: document.getElementById('selection-help'),
   panelActive: document.getElementById('panel-active'),
   panelDone: document.getElementById('panel-done'),
   activeList: document.getElementById('active-list'),
@@ -41,6 +45,13 @@ const els = {
   listError: document.getElementById('list-error'),
   listItems: document.getElementById('list-items'),
   listSheetClose: document.getElementById('list-sheet-close'),
+  bulkSheet: document.getElementById('bulk-sheet'),
+  bulkSheetClose: document.getElementById('bulk-sheet-close'),
+  bulkSheetTitle: document.getElementById('bulk-sheet-title'),
+  bulkSheetDescription: document.getElementById('bulk-sheet-description'),
+  bulkDestinationList: document.getElementById('bulk-destination-list'),
+  selectionActionBar: document.getElementById('selection-action-bar'),
+  selectionCount: document.getElementById('selection-count'),
   toast: document.getElementById('toast'),
   liveRegion: document.getElementById('live-region'),
 };
@@ -52,6 +63,9 @@ let listMenuId = null;
 const expandedTaskIds = new Set();
 let reorderState = null;
 let isReorderMode = false;
+let isSelectionMode = false;
+const selectedTaskIds = new Set();
+let pendingBulkAction = null;
 
 function createListId() {
   return `list-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -70,6 +84,69 @@ function commit(nextState) {
 function cancelReorderInteraction() {
   reorderState = null;
   clearReorderStyles();
+}
+
+function exitSelectionMode() {
+  isSelectionMode = false;
+  selectedTaskIds.clear();
+  pendingBulkAction = null;
+}
+
+function closeBulkSheet() {
+  pendingBulkAction = null;
+  els.bulkSheet.classList.add('is-hidden');
+  els.bulkDestinationList.innerHTML = '';
+  els.bulkSheetDescription.textContent = '';
+  if (els.sheet.classList.contains('is-hidden') && els.listSheet.classList.contains('is-hidden')) {
+    els.backdrop.classList.add('is-hidden');
+  }
+}
+
+function openBulkSheet(action) {
+  pendingBulkAction = action;
+  els.sheet.classList.add('is-hidden');
+  els.listSheet.classList.add('is-hidden');
+  els.bulkSheet.classList.remove('is-hidden');
+  els.backdrop.classList.remove('is-hidden');
+
+  const selectedCount = selectedTaskIds.size;
+  const actionLabel = action === 'move' ? '移動' : 'コピー';
+  els.bulkSheetTitle.textContent = `${actionLabel}先を選択`;
+  els.bulkSheetDescription.textContent = `${selectedCount}件のタスクを${actionLabel}します。`;
+
+  const currentList = getCurrentList();
+  const destinations = state.lists.filter((list) => list.id !== currentList.id);
+  if (destinations.length < 1) {
+    els.bulkSheetDescription.textContent = '移動先/コピー先リストがありません。先にリストを作成してください。';
+    els.bulkDestinationList.innerHTML = '';
+    return;
+  }
+  els.bulkDestinationList.innerHTML = destinations
+    .map(
+      (list) => `<li class="list-row">
+        <button class="list-item-btn" type="button" data-action="bulk-destination" data-list-id="${list.id}">${escapeHtml(list.name)}</button>
+      </li>`,
+    )
+    .join('');
+}
+
+function runBulkAction(destinationListId) {
+  if (!pendingBulkAction || !destinationListId || selectedTaskIds.size < 1) return;
+
+  const action = pendingBulkAction;
+  const nextState = action === 'move'
+    ? moveTasksToList(state, [...selectedTaskIds], destinationListId)
+    : copyTasksToList(state, [...selectedTaskIds], destinationListId);
+  const destination = state.lists.find((list) => list.id === destinationListId);
+  commit(nextState);
+  const count = selectedTaskIds.size;
+  announce(`${count}件のタスクを${action === 'move' ? '移動' : 'コピー'}しました。`);
+  closeBulkSheet();
+  exitSelectionMode();
+  render();
+  if (destination) {
+    showUndoToast('', `${count}件を「${destination.name}」へ${action === 'move' ? '移動' : 'コピー'}しました。`, { withUndo: false });
+  }
 }
 
 function clearReorderStyles() {
@@ -186,11 +263,23 @@ function render() {
   els.panelActive.classList.toggle('is-hidden', !isActiveTab);
   els.panelDone.classList.toggle('is-hidden', isActiveTab);
 
-  const canReorder = isActiveTab && activeTasks.length > 1;
+  const canSelect = isActiveTab && activeTasks.length > 0;
+  const canReorder = isActiveTab && activeTasks.length > 1 && !isSelectionMode;
+  if ((!canSelect || !isActiveTab) && isSelectionMode) {
+    exitSelectionMode();
+  }
   if (!canReorder && isReorderMode) {
     isReorderMode = false;
     cancelReorderInteraction();
   }
+
+  els.selectionToggleBtn.disabled = !canSelect;
+  els.selectionToggleBtn.classList.toggle('is-active', isSelectionMode);
+  els.selectionToggleBtn.setAttribute('aria-pressed', String(isSelectionMode));
+  const selectionLabel = isSelectionMode ? '選択完了' : 'タスク選択';
+  els.selectionToggleBtn.textContent = selectionLabel;
+  els.selectionToggleBtn.setAttribute('aria-label', selectionLabel);
+
   els.reorderToggleBtn.disabled = !canReorder;
   els.reorderToggleBtn.classList.toggle('is-active', isReorderMode);
   els.reorderToggleBtn.setAttribute('aria-pressed', String(isReorderMode));
@@ -198,7 +287,12 @@ function render() {
   els.reorderToggleBtn.textContent = reorderToggleLabel;
   els.reorderToggleBtn.setAttribute('aria-label', reorderToggleLabel);
   els.reorderHelp.classList.toggle('is-hidden', !isReorderMode);
+  els.selectionHelp.classList.toggle('is-hidden', !isSelectionMode);
+  els.selectionActionBar.classList.toggle('is-hidden', !isSelectionMode);
+  els.selectionCount.textContent = `${selectedTaskIds.size}件選択中`;
+
   document.body.classList.toggle('is-reorder-mode', isReorderMode);
+  document.body.classList.toggle('is-selection-mode', isSelectionMode);
 
   syncTitleToggleVisibility();
   applyActionLabels();
@@ -206,16 +300,20 @@ function render() {
 
 function renderTask(task, done) {
   const expanded = expandedTaskIds.has(task.id);
-  const disabledAttr = !done && isReorderMode ? 'disabled' : '';
+  const disabledAttr = !done && (isReorderMode || isSelectionMode) ? 'disabled' : '';
+  const checked = selectedTaskIds.has(task.id);
 
   return `
     <li class="task-item" data-task-id="${task.id}">
+      ${!done && isSelectionMode
+        ? `<label class="task-select-control"><input type="checkbox" data-action="toggle-select" ${checked ? 'checked' : ''} aria-label="${escapeHtml(task.title)}を選択" /><span>選択</span></label>`
+        : ''}
       ${done
         ? ''
         : `<button class="task-drag-handle${isReorderMode ? '' : ' is-hidden'}" data-action="drag-handle" aria-label="${escapeHtml(task.title)}をドラッグして並び替え" title="ドラッグで並び替え" type="button">≡</button>`}
       <div class="task-main">
         <span class="task-title ${expanded ? '' : 'is-clamped'}">${escapeHtml(task.title)}</span>
-        <button type="button" class="title-toggle is-hidden" data-action="toggle-title" ${!done && isReorderMode ? 'disabled' : ''}>全文表示</button>
+        <button type="button" class="title-toggle is-hidden" data-action="toggle-title" ${!done && (isReorderMode || isSelectionMode) ? 'disabled' : ''}>全文表示</button>
       </div>
       <div class="task-actions">
         ${done
@@ -296,6 +394,7 @@ function hideSheet() {
   listMenuId = null;
   els.sheet.classList.add('is-hidden');
   els.listSheet.classList.add('is-hidden');
+  closeBulkSheet();
   els.backdrop.classList.add('is-hidden');
   els.sheetInput.value = '';
   els.listInput.value = '';
@@ -409,9 +508,12 @@ async function handleImportFile(file) {
   }
 }
 
-function showUndoToast(taskId, title) {
+function showUndoToast(taskId, title, { withUndo = true } = {}) {
   clearTimeout(toastTimer);
-  els.toast.innerHTML = `<span>「${escapeHtml(title)}」を完了にしました。</span><button type="button" data-action="undo" data-task-id="${taskId}">取り消し</button>`;
+  const undoHtml = withUndo
+    ? `<button type="button" data-action="undo" data-task-id="${taskId}">取り消し</button>`
+    : '';
+  els.toast.innerHTML = `<span>${escapeHtml(title)}</span>${undoHtml}`;
   els.toast.classList.remove('is-hidden');
   toastTimer = window.setTimeout(() => {
     els.toast.classList.add('is-hidden');
@@ -435,6 +537,9 @@ els.tabActive.addEventListener('click', () => {
 
 els.tabDone.addEventListener('click', () => {
   currentTab = 'done';
+  if (isSelectionMode) {
+    exitSelectionMode();
+  }
   if (isReorderMode) {
     isReorderMode = false;
     cancelReorderInteraction();
@@ -442,9 +547,26 @@ els.tabDone.addEventListener('click', () => {
   render();
 });
 
+els.selectionToggleBtn.addEventListener('click', () => {
+  if (els.selectionToggleBtn.disabled) return;
+  isSelectionMode = !isSelectionMode;
+  if (isSelectionMode) {
+    isReorderMode = false;
+    cancelReorderInteraction();
+    announce('タスク選択モードを開始しました。');
+  } else {
+    selectedTaskIds.clear();
+    announce('タスク選択モードを終了しました。');
+  }
+  render();
+});
+
 els.reorderToggleBtn.addEventListener('click', () => {
   if (els.reorderToggleBtn.disabled) return;
   isReorderMode = !isReorderMode;
+  if (isReorderMode && isSelectionMode) {
+    exitSelectionMode();
+  }
   cancelReorderInteraction();
   announce(isReorderMode ? '順序入れ替えモードを開始しました。' : '順序入れ替えモードを終了しました。');
   render();
@@ -478,6 +600,7 @@ els.listInput.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') hideSheet();
 });
 els.listSheetClose?.addEventListener('click', hideSheet);
+els.bulkSheetClose?.addEventListener('click', hideSheet);
 els.listInput.addEventListener('input', () => {
   if (els.listInput.value.trim()) showListError(false, '');
 });
@@ -584,13 +707,13 @@ document.body.addEventListener('click', (event) => {
     listMenuId = null;
     render();
   }
-  const button = event.target.closest('button[data-action]');
-  if (!button) return;
+  const control = event.target.closest('[data-action]');
+  if (!control) return;
 
-  const action = button.dataset.action;
+  const action = control.dataset.action;
 
   if (action === 'undo') {
-    const taskId = button.dataset.taskId;
+    const taskId = control.dataset.taskId;
     if (!taskId) return;
     commit(restoreTask(state, taskId));
     announce('完了を取り消しました。');
@@ -599,7 +722,42 @@ document.body.addEventListener('click', (event) => {
     return;
   }
 
-  const row = button.closest('[data-task-id]');
+  if (action === 'selection-cancel') {
+    exitSelectionMode();
+    render();
+    return;
+  }
+
+  if (action === 'selection-select-all') {
+    const currentListId = state.currentListId;
+    const activeIds = state.tasks
+      .filter((task) => task.listId === currentListId && task.status === 'active')
+      .map((task) => task.id);
+    if (selectedTaskIds.size === activeIds.length) {
+      selectedTaskIds.clear();
+    } else {
+      activeIds.forEach((id) => selectedTaskIds.add(id));
+    }
+    render();
+    return;
+  }
+
+  if (action === 'selection-copy' || action === 'selection-move') {
+    if (selectedTaskIds.size < 1) {
+      announce('タスクを1件以上選択してください。');
+      return;
+    }
+    openBulkSheet(action === 'selection-move' ? 'move' : 'copy');
+    return;
+  }
+
+  if (action === 'bulk-destination') {
+    const destinationListId = control.dataset.listId;
+    runBulkAction(destinationListId);
+    return;
+  }
+
+  const row = control.closest('[data-task-id]');
   if (!row) return;
 
   const taskId = row.dataset.taskId;
@@ -611,6 +769,16 @@ document.body.addEventListener('click', (event) => {
       expandedTaskIds.delete(taskId);
     } else {
       expandedTaskIds.add(taskId);
+    }
+    render();
+    return;
+  }
+
+  if (action === 'toggle-select') {
+    if (selectedTaskIds.has(taskId)) {
+      selectedTaskIds.delete(taskId);
+    } else {
+      selectedTaskIds.add(taskId);
     }
     render();
     return;
@@ -631,7 +799,7 @@ document.body.addEventListener('click', (event) => {
     if (!window.confirm(`「${task.title}」を完了にしますか？`)) return;
     commit(completeTask(state, taskId));
     announce(`「${task.title}」を完了にしました。`);
-    showUndoToast(taskId, task.title);
+    showUndoToast(taskId, `「${task.title}」を完了にしました。`);
   }
 
   if (action === 'restore') {

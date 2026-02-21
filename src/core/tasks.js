@@ -94,3 +94,31 @@ export function reorderActiveTask(state, listId, taskId, toIndex) {
     }),
   };
 }
+
+export function copyTasksToList(state, taskIds, destinationListId) {
+  if (!destinationListId || !Array.isArray(taskIds) || taskIds.length === 0) return state;
+  const targetIds = [...new Set(taskIds)];
+  const tasksToCopy = state.tasks.filter((task) => targetIds.includes(task.id));
+  if (!tasksToCopy.length) return state;
+
+  const copiedTasks = tasksToCopy.map((task) => ({
+    ...task,
+    id: createId(),
+    listId: destinationListId,
+  }));
+
+  return {
+    ...state,
+    tasks: [...state.tasks, ...copiedTasks],
+  };
+}
+
+export function moveTasksToList(state, taskIds, destinationListId) {
+  if (!destinationListId || !Array.isArray(taskIds) || taskIds.length === 0) return state;
+  const targetIds = new Set(taskIds);
+
+  return {
+    ...state,
+    tasks: state.tasks.map((task) => (targetIds.has(task.id) ? { ...task, listId: destinationListId } : task)),
+  };
+}

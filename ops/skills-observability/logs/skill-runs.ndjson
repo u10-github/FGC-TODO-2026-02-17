@@ -1,0 +1,1 @@
+{"task_id":"2026-02-21-selection-mode-bulk-actions","result":"completed","evidence":["npm test pass","playwright screenshot artifact captured","manual UI flow verified by script"]}
