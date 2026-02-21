@@ -60,8 +60,18 @@
       </div>
     </section>
 
-    <section id="list-sheet" class="add-sheet is-hidden" aria-label="タスクリスト管理シート">
-      <h2>タスクリストを切り替え</h2>
+    <section
+      id="list-sheet"
+      class="add-sheet list-sheet-modal is-hidden"
+      aria-label="タスクリスト管理モーダル"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="list-sheet-title"
+    >
+      <div class="list-sheet-header">
+        <h2 id="list-sheet-title">タスクリスト管理</h2>
+        <button id="list-sheet-close" type="button" aria-label="タスクリスト管理を閉じる">閉じる</button>
+      </div>
       <label for="list-name-input">リスト名</label>
       <div class="list-create-row">
         <input id="list-name-input" type="text" placeholder="例: SF6 / リュウ" />
