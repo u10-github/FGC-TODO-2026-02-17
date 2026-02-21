@@ -99,6 +99,14 @@ body {
 }
 
 
+.tabs-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+
+.selection-toggle-btn,
 .reorder-toggle-btn {
   flex-shrink: 0;
   min-height: 40px;
@@ -110,6 +118,7 @@ body {
   white-space: nowrap;
 }
 
+.selection-toggle-btn.is-active,
 .reorder-toggle-btn.is-active {
   background: #1d4ed8;
   border-color: #3b82f6;
@@ -119,6 +128,12 @@ body {
 .reorder-help {
   margin: 0 0 0.8rem;
   color: #93c5fd;
+  font-size: 0.92rem;
+}
+
+.selection-help {
+  margin: 0 0 0.8rem;
+  color: #bfdbfe;
   font-size: 0.92rem;
 }
 
@@ -146,6 +161,21 @@ body {
   border: 1px solid #293244;
   border-radius: 12px;
   padding: 0.7rem;
+}
+
+.task-select-control {
+  grid-area: handle;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  user-select: none;
+}
+
+.task-select-control input {
+  width: 18px;
+  height: 18px;
 }
 
 .task-main {
@@ -473,6 +503,41 @@ input:focus-visible {
   padding: 0;
 }
 
+.selection-action-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  width: min(96vw, 760px);
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  z-index: 30;
+}
+
+.selection-count {
+  margin: 0;
+  color: #dbeafe;
+  font-size: 0.92rem;
+}
+
+.selection-action-buttons {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.bulk-sheet-description {
+  margin: 0;
+  color: #cbd5e1;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -530,7 +595,28 @@ input:focus-visible {
 }
 
 @media (max-width: 640px) {
+  .tabs-actions {
+    gap: 0.3rem;
+  }
+
+  .selection-toggle-btn,
   .reorder-toggle-btn {
     font-size: 0.9rem;
+    padding-inline: 0.56rem;
+  }
+
+  .selection-action-bar {
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: none;
+    width: auto;
+    bottom: 0.5rem;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .selection-action-buttons {
+    width: 100%;
+    justify-content: flex-start;
   }
 }

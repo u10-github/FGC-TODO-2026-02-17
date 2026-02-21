@@ -22,18 +22,30 @@
           <button id="tab-active" class="tab is-active" type="button" aria-selected="true">アクティブ</button>
           <button id="tab-done" class="tab" type="button" aria-selected="false">完了</button>
         </div>
-        <button
-          id="reorder-toggle-btn"
-          class="reorder-toggle-btn"
-          type="button"
-          aria-pressed="false"
-          aria-label="タスクの順序入れ替えモード"
-        >
-          順序入れ替え
-        </button>
+        <div class="tabs-actions">
+          <button
+            id="selection-toggle-btn"
+            class="selection-toggle-btn"
+            type="button"
+            aria-pressed="false"
+            aria-label="タスク選択モード"
+          >
+            タスク選択
+          </button>
+          <button
+            id="reorder-toggle-btn"
+            class="reorder-toggle-btn"
+            type="button"
+            aria-pressed="false"
+            aria-label="タスクの順序入れ替えモード"
+          >
+            順序入れ替え
+          </button>
+        </div>
       </nav>
 
       <p id="reorder-help" class="reorder-help is-hidden">順序入れ替え中です。タスクの右端ハンドルをドラッグしてください。</p>
+      <p id="selection-help" class="selection-help is-hidden">選択モード中です。タスクを選択して移動またはコピーしてください。</p>
 
       <section id="panel-active" class="panel" aria-labelledby="tab-active">
         <ul id="active-list" class="task-list"></ul>
@@ -79,6 +91,32 @@
       </div>
       <p id="list-error" class="error is-hidden" role="alert">リスト名を入力してください。</p>
       <ul id="list-items" class="list-items"></ul>
+    </section>
+
+    <section
+      id="bulk-sheet"
+      class="add-sheet list-sheet-modal is-hidden"
+      aria-label="タスク移動先選択モーダル"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bulk-sheet-title"
+    >
+      <div class="list-sheet-header">
+        <h2 id="bulk-sheet-title">移動先を選択</h2>
+        <button id="bulk-sheet-close" type="button" aria-label="移動先選択を閉じる">閉じる</button>
+      </div>
+      <p id="bulk-sheet-description" class="bulk-sheet-description"></p>
+      <ul id="bulk-destination-list" class="list-items"></ul>
+    </section>
+
+    <section id="selection-action-bar" class="selection-action-bar is-hidden" aria-label="選択タスク操作バー">
+      <p id="selection-count" class="selection-count">0件選択中</p>
+      <div class="selection-action-buttons">
+        <button type="button" data-action="selection-select-all">全選択</button>
+        <button type="button" data-action="selection-copy" class="btn-primary">コピー</button>
+        <button type="button" data-action="selection-move" class="btn-primary">移動</button>
+        <button type="button" data-action="selection-cancel">キャンセル</button>
+      </div>
     </section>
 
     <div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>

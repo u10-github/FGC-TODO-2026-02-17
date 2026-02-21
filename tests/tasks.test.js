@@ -6,6 +6,8 @@ import {
   deleteTask,
   getTasksByList,
   incCount,
+  copyTasksToList,
+  moveTasksToList,
   reorderActiveTask,
   resetCount,
   restoreTask,
@@ -114,4 +116,39 @@ test('reorderActiveTask reorders only active tasks in selected list', () => {
     state.tasks.map((task) => task.id),
     ['a2', 'a3', 'd1', 'b1', 'a1'],
   );
+});
+
+test('copyTasksToList duplicates selected tasks into destination list', () => {
+  const seeded = {
+    schemaVersion: 2,
+    tasks: [
+      { id: 'a1', title: 'A1', status: 'active', count: 2, listId: 'l1' },
+      { id: 'a2', title: 'A2', status: 'done', count: 1, listId: 'l1' },
+    ],
+  };
+
+  const state = copyTasksToList(seeded, ['a1', 'a2'], 'l2');
+  assert.equal(state.tasks.length, 4);
+  const copied = state.tasks.slice(2);
+  assert.equal(copied[0].listId, 'l2');
+  assert.equal(copied[1].listId, 'l2');
+  assert.equal(copied[0].title, 'A1');
+  assert.equal(copied[1].status, 'done');
+  assert.notEqual(copied[0].id, 'a1');
+});
+
+test('moveTasksToList updates listId for selected tasks only', () => {
+  const seeded = {
+    schemaVersion: 2,
+    tasks: [
+      { id: 'a1', title: 'A1', status: 'active', count: 2, listId: 'l1' },
+      { id: 'a2', title: 'A2', status: 'done', count: 1, listId: 'l1' },
+      { id: 'b1', title: 'B1', status: 'active', count: 0, listId: 'l3' },
+    ],
+  };
+
+  const state = moveTasksToList(seeded, ['a1', 'a2'], 'l2');
+  assert.equal(state.tasks[0].listId, 'l2');
+  assert.equal(state.tasks[1].listId, 'l2');
+  assert.equal(state.tasks[2].listId, 'l3');
 });

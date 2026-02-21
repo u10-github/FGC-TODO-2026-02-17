@@ -327,3 +327,34 @@ test('active tasks can be reordered only in reorder mode and persist after reloa
   await expect(reloadedRows.nth(1).locator('.task-title')).toContainText('タスクC');
   await expect(reloadedRows.nth(2).locator('.task-title')).toContainText('タスクA');
 });
+
+test('selection mode can move and copy tasks to another list', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  const base = Date.now();
+  const listA = `選択元-${base}`;
+  const listB = `選択先-${base}`;
+
+  await createTaskList(page, listA);
+  await addTask(page, `移動対象-${base}`);
+  await addTask(page, `コピー対象-${base}`);
+
+  await createTaskList(page, listB);
+  await openListSheet(page);
+  await page.getByRole('button', { name: listA, exact: true }).click();
+
+  await page.getByRole('button', { name: 'タスク選択' }).click();
+  await page.locator('#active-list .task-item').nth(0).locator('input[data-action="toggle-select"]').check();
+  await page.getByRole('button', { name: '移動' }).click();
+  await page.locator('#bulk-destination-list .list-item-btn', { hasText: listB }).click();
+
+  await expect(page.locator('#active-list .task-item')).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'タスク選択' }).click();
+  await page.locator('#active-list .task-item').nth(0).locator('input[data-action="toggle-select"]').check();
+  await page.getByRole('button', { name: 'コピー' }).click();
+  await page.locator('#bulk-destination-list .list-item-btn', { hasText: listB }).click();
+
+  await openListSheet(page);
+  await page.getByRole('button', { name: listB, exact: true }).click();
+  await expect(page.locator('#active-list .task-item')).toHaveCount(2);
+});
