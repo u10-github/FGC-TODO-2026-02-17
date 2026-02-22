@@ -6,9 +6,9 @@
 ## 対応表
 | Zone | Flow | 必須チェック | コマンド / 手順 | Owner |
 |---|---|---|---|---|
-| S1 | {CRITICAL_FLOW_1} | {CHECK_S1} | {TEST_CMD_S1} | {OWNER_TEAM} |
-| S2 | {CRITICAL_FLOW_2} | {CHECK_S2} | {TEST_CMD_S2} | {OWNER_TEAM} |
-| S3 | {CRITICAL_FLOW_3} | {CHECK_S3} | {TEST_CMD_S3} | {OWNER_TEAM} |
+| S1 | タスクを追加できる | 主要フローが成立する | npm run test | u10-github |
+| S2 | タスクの完了状態を切り替えできる | 変更系フローが成立する | npm run test:e2e | u10-github |
+| S3 | タスクを削除できる | 復旧/公開フローが成立する | npm run test:e2e:headed | u10-github |
 
 ## PR更新ルール
 - S1-S3の挙動変更がある場合は、この表を同じPRで更新する。
