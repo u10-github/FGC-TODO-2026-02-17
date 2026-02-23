@@ -620,3 +620,62 @@ input:focus-visible {
     justify-content: flex-start;
   }
 }
+
+.app-footer {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #263041;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: #93c5fd;
+}
+
+.legal-page {
+  padding-bottom: 2rem;
+}
+
+.legal-header h1 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.legal-header p {
+  margin: 0.5rem 0 0;
+}
+
+.legal-section {
+  margin-top: 1rem;
+  background: #050914;
+  border: 1px solid #222b3a;
+  border-radius: 12px;
+  padding: 0.85rem;
+}
+
+.legal-section h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.legal-section p {
+  margin: 0.6rem 0 0;
+  line-height: 1.6;
+}
+
+.copy-area {
+  width: 100%;
+  min-height: 8.5rem;
+  margin-top: 0.6rem;
+  background: #0b1220;
+  color: #e5e7eb;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 0.7rem;
+  line-height: 1.5;
+}
