@@ -266,6 +266,23 @@ test('does not show 全文表示 when text is not actually clamped', async ({ pa
   await expect(row.locator('button[data-action="toggle-title"]')).toBeHidden();
 });
 
+test('footer links can reach terms/privacy and each page is directly accessible', async ({ page }) => {
+  await page.goto('/index.html');
+
+  await expect(page.getByRole('contentinfo')).toBeVisible();
+  await expect(page.getByRole('link', { name: '利用規約' })).toHaveAttribute('href', './terms/');
+  await expect(page.getByRole('link', { name: 'データの扱い' })).toHaveAttribute('href', './privacy/');
+
+  await page.getByRole('link', { name: '利用規約' }).click();
+  await expect(page).toHaveURL(/\/terms\/?$/);
+  await expect(page.getByRole('heading', { name: '利用規約' })).toBeVisible();
+
+  await page.goto('/privacy/');
+  await expect(page).toHaveURL(/\/privacy\/?$/);
+  await expect(page.getByRole('heading', { name: 'データの扱い（プライバシー説明）' })).toBeVisible();
+  await expect(page.getByText('個人情報・機密情報は入力しないでください。')).toBeVisible();
+});
+
 test('active tasks can be reordered only in reorder mode and persist after reload', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
 
