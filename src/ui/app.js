@@ -12,15 +12,20 @@ import {
 } from '../core/tasks.js';
 import { deleteList, renameList } from '../core/lists.js';
 import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
-import { createShareApiClient } from './share-api.js';
-import { buildSharePayload } from './share-utils.js';
+import {
+  buildSharePublishUrl,
+  buildShareSearchUrl,
+  resolveShareAppBaseUrl,
+  shouldShowImportSuccess,
+} from './share-utils.js';
 
 const els = {
   menuBtn: document.getElementById('menu-btn'),
   menuPopover: document.getElementById('menu-popover'),
   exportBtn: document.getElementById('export-btn'),
   importBtn: document.getElementById('import-btn'),
-  shareOpenBtn: document.getElementById('share-open-btn'),
+  sharePublishBtn: document.getElementById('share-publish-btn'),
+  shareSearchBtn: document.getElementById('share-search-btn'),
   importFileInput: document.getElementById('import-file-input'),
   listSwitchBtn: document.getElementById('list-switch-btn'),
   tabActive: document.getElementById('tab-active'),
@@ -48,29 +53,6 @@ const els = {
   listError: document.getElementById('list-error'),
   listItems: document.getElementById('list-items'),
   listSheetClose: document.getElementById('list-sheet-close'),
-  shareSheet: document.getElementById('share-sheet'),
-  shareSheetClose: document.getElementById('share-sheet-close'),
-  shareTitleInput: document.getElementById('share-title-input'),
-  shareGameSelect: document.getElementById('share-game-select'),
-  shareCharacterSelect: document.getElementById('share-character-select'),
-  shareVersionInput: document.getElementById('share-version-input'),
-  shareDescriptionInput: document.getElementById('share-description-input'),
-  sharePublishError: document.getElementById('share-publish-error'),
-  sharePublishSubmit: document.getElementById('share-publish-submit'),
-  shareCreatedRow: document.getElementById('share-created-row'),
-  shareCreatedUrl: document.getElementById('share-created-url'),
-  shareCreatedCopy: document.getElementById('share-created-copy'),
-  shareSearchGameSelect: document.getElementById('share-search-game-select'),
-  shareSearchCharacterSelect: document.getElementById('share-search-character-select'),
-  shareSortSelect: document.getElementById('share-sort-select'),
-  shareResetParent: document.getElementById('share-reset-parent'),
-  shareSearchHint: document.getElementById('share-search-hint'),
-  shareSearchResults: document.getElementById('share-search-results'),
-  shareDetailSection: document.getElementById('share-detail-section'),
-  shareDetailMeta: document.getElementById('share-detail-meta'),
-  shareDetailDescription: document.getElementById('share-detail-description'),
-  shareDetailImport: document.getElementById('share-detail-import'),
-  shareDetailChildren: document.getElementById('share-detail-children'),
   bulkSheet: document.getElementById('bulk-sheet'),
   bulkSheetClose: document.getElementById('bulk-sheet-close'),
   bulkSheetTitle: document.getElementById('bulk-sheet-title'),
@@ -86,12 +68,7 @@ let state = loadState({ storage: window.localStorage });
 let currentTab = 'active';
 let toastTimer = null;
 let listMenuId = null;
-const shareApiClient = createShareApiClient();
-const shareTurnstileToken = (globalThis.SHARE_TURNSTILE_TOKEN ?? 'local-dev-bypass').toString();
-let shareGames = [];
-let shareCurrentSearchSort = 'imports_desc';
-let shareCurrentParentId = null;
-let shareSelectedDetailId = null;
+const shareAppBaseUrl = resolveShareAppBaseUrl(globalThis);
 const expandedTaskIds = new Set();
 let reorderState = null;
 let isReorderMode = false;
@@ -126,106 +103,6 @@ function setSelectOptions(selectElement, options, placeholder) {
   selectElement.innerHTML = content.join('');
 }
 
-async function loadShareGames() {
-  const games = await shareApiClient.listGames();
-  shareGames = games.map((game) => ({ value: game.game_key, label: game.game_name }));
-  setSelectOptions(els.shareGameSelect, shareGames, 'ゲームを選択');
-  setSelectOptions(els.shareSearchGameSelect, shareGames, 'ゲームを選択');
-}
-
-async function loadShareCharacters(gameKey, targetSelect) {
-  if (!gameKey) {
-    setSelectOptions(targetSelect, [], 'キャラクターを選択');
-    return;
-  }
-
-  const characters = await shareApiClient.listCharacters(gameKey);
-  const options = characters.map((character) => ({
-    value: character.character_key,
-    label: character.character_name,
-  }));
-  setSelectOptions(targetSelect, options, 'キャラクターを選択');
-}
-
-function getShareSearchQuery() {
-  const gameKey = els.shareSearchGameSelect.value;
-  const characterKey = els.shareSearchCharacterSelect.value;
-  const sort = els.shareSortSelect.value || 'imports_desc';
-  return { gameKey, characterKey, sort };
-}
-
-function setShareParentSearchMode(enabled) {
-  els.shareResetParent.classList.toggle('is-hidden', !enabled);
-}
-
-function renderShareResults(items) {
-  if (!items.length) {
-    els.shareSearchResults.innerHTML = '';
-    els.shareSearchHint.textContent = shareCurrentParentId ? '派生はまだありません。' : '該当する公開リストがありません。';
-    return;
-  }
-
-  els.shareSearchHint.textContent = `${items.length}件ヒット`;
-  els.shareSearchResults.innerHTML = items
-    .map(
-      (item) => `<li class="list-row">
-        <button class="list-item-btn" type="button" data-action="share-detail" data-list-id="${item.id}">
-          ${escapeHtml(item.title)} / imports:${item.imports_count}
-        </button>
-      </li>`
-    )
-    .join('');
-}
-
-async function runShareSearch({ resetParent = false } = {}) {
-  if (resetParent) shareCurrentParentId = null;
-  setShareParentSearchMode(Boolean(shareCurrentParentId));
-  const { gameKey, characterKey, sort } = getShareSearchQuery();
-  shareCurrentSearchSort = sort;
-
-  if (!gameKey || !characterKey) {
-    els.shareSearchResults.innerHTML = '';
-    els.shareSearchHint.textContent = 'ゲームとキャラクターを選択してください。';
-    els.shareDetailSection.classList.add('is-hidden');
-    shareSelectedDetailId = null;
-    return;
-  }
-
-  try {
-    const items = await shareApiClient.searchLists({
-      gameKey,
-      characterKey,
-      sort: shareCurrentSearchSort,
-      parentId: shareCurrentParentId ?? undefined,
-    });
-    renderShareResults(items);
-  } catch (error) {
-    els.shareSearchResults.innerHTML = '';
-    els.shareSearchHint.textContent = mapErrorMessage(error, '検索に失敗しました。');
-  }
-}
-
-async function showShareDetail(listId) {
-  try {
-    const detail = await shareApiClient.getList(listId);
-    shareSelectedDetailId = listId;
-    els.shareDetailMeta.textContent = `${detail.title} / imports:${detail.imports_count} / ${detail.created_at}`;
-    els.shareDetailDescription.textContent = detail.description || '(説明なし)';
-    els.shareDetailSection.classList.remove('is-hidden');
-  } catch (error) {
-    announce(mapErrorMessage(error, '詳細取得に失敗しました。'));
-  }
-}
-
-async function importSharedList(listId) {
-  const detail = await shareApiClient.getList(listId);
-  const importedState = importStateData(detail.payload_json);
-  const nextState = mergeImportedState(state, importedState);
-  commit(nextState);
-  await shareApiClient.markImported(listId);
-  announce(`「${detail.title}」をインポートしました。`);
-}
-
 function cancelReorderInteraction() {
   reorderState = null;
   clearReorderStyles();
@@ -244,8 +121,7 @@ function closeBulkSheet() {
   els.bulkSheetDescription.textContent = '';
   if (
     els.sheet.classList.contains('is-hidden') &&
-    els.listSheet.classList.contains('is-hidden') &&
-    els.shareSheet.classList.contains('is-hidden')
+    els.listSheet.classList.contains('is-hidden')
   ) {
     els.backdrop.classList.add('is-hidden');
   }
@@ -535,7 +411,6 @@ function showSheet() {
   listMenuId = null;
   els.sheet.classList.remove('is-hidden');
   els.listSheet.classList.add('is-hidden');
-  els.shareSheet.classList.add('is-hidden');
   els.backdrop.classList.remove('is-hidden');
   els.sheetInput.focus();
 }
@@ -544,14 +419,12 @@ function hideSheet() {
   listMenuId = null;
   els.sheet.classList.add('is-hidden');
   els.listSheet.classList.add('is-hidden');
-  els.shareSheet.classList.add('is-hidden');
   closeBulkSheet();
   els.backdrop.classList.add('is-hidden');
   els.sheetInput.value = '';
   els.listInput.value = '';
   showSheetError(false);
   showListError(false, '');
-  els.sharePublishError.classList.add('is-hidden');
 }
 
 function showSheetError(show) {
@@ -576,93 +449,46 @@ function showListSheet() {
   listMenuId = null;
   els.listSheet.classList.remove('is-hidden');
   els.sheet.classList.add('is-hidden');
-  els.shareSheet.classList.add('is-hidden');
   els.backdrop.classList.remove('is-hidden');
   els.listInput.focus();
 }
 
-async function showShareSheet() {
+function buildCurrentListPayloadJson() {
+  const currentList = getCurrentList();
+  if (!currentList) throw new Error('current list was not found');
+  const payload = {
+    schemaVersion: 2,
+    currentListId: currentList.id,
+    lists: [currentList],
+    tasks: state.tasks.filter((task) => task.listId === currentList.id),
+  };
+  return JSON.stringify(payload);
+}
+
+function ensureOnlineForExternalNavigation() {
+  if (navigator.onLine) return true;
+  announce('オフラインのため共有アプリへ遷移できません。ローカル編集は継続できます。');
+  return false;
+}
+
+function openSharePublish() {
   showMenu(false);
-  listMenuId = null;
-  els.shareSheet.classList.remove('is-hidden');
-  els.listSheet.classList.add('is-hidden');
-  els.sheet.classList.add('is-hidden');
-  closeBulkSheet();
-  els.backdrop.classList.remove('is-hidden');
-  els.sharePublishError.classList.add('is-hidden');
-  els.shareCreatedRow.classList.add('is-hidden');
-  els.shareDetailSection.classList.add('is-hidden');
-  shareCurrentParentId = null;
-  setShareParentSearchMode(false);
-  shareSelectedDetailId = null;
-  els.shareSortSelect.value = 'imports_desc';
-  shareCurrentSearchSort = 'imports_desc';
-
-  const currentList = getCurrentList();
-  els.shareTitleInput.value = currentList?.name ?? '';
-  els.shareVersionInput.value = '';
-  els.shareDescriptionInput.value = '';
-  setSelectOptions(els.shareCharacterSelect, [], 'キャラクターを選択');
-  setSelectOptions(els.shareSearchCharacterSelect, [], 'キャラクターを選択');
-  els.shareSearchResults.innerHTML = '';
-  els.shareSearchHint.textContent = 'ゲームとキャラクターを選択してください。';
-
-  try {
-    await loadShareGames();
-  } catch (error) {
-    els.sharePublishError.textContent = mapErrorMessage(error, 'catalogの取得に失敗しました。');
-    els.sharePublishError.classList.remove('is-hidden');
-  }
-
-  els.shareTitleInput.focus();
+  if (!ensureOnlineForExternalNavigation()) return;
+  const returnTo = `${window.location.origin}${window.location.pathname}`;
+  const url = buildSharePublishUrl({
+    shareAppBaseUrl,
+    payloadJson: buildCurrentListPayloadJson(),
+    returnTo,
+  });
+  window.location.assign(url);
 }
 
-async function submitSharePublish() {
-  const currentList = getCurrentList();
-  if (!currentList) return;
-
-  const title = els.shareTitleInput.value.trim();
-  const gameKey = els.shareGameSelect.value;
-  const characterKey = els.shareCharacterSelect.value;
-  if (!title || !gameKey || !characterKey) {
-    els.sharePublishError.textContent = 'タイトル・ゲーム・キャラクターは必須です。';
-    els.sharePublishError.classList.remove('is-hidden');
-    return;
-  }
-
-  els.sharePublishError.classList.add('is-hidden');
-
-  try {
-    const payload = buildSharePayload(state, {
-      listId: currentList.id,
-      title,
-      gameKey,
-      characterKey,
-      versionText: els.shareVersionInput.value,
-      description: els.shareDescriptionInput.value,
-      turnstileToken: shareTurnstileToken,
-      parentId: null,
-    });
-    const created = await shareApiClient.createList(payload);
-    els.shareCreatedUrl.value = created.share_url;
-    els.shareCreatedRow.classList.remove('is-hidden');
-    announce('共有URLを作成しました。');
-  } catch (error) {
-    els.sharePublishError.textContent = mapErrorMessage(error, '公開に失敗しました。');
-    els.sharePublishError.classList.remove('is-hidden');
-  }
-}
-
-async function copyShareCreatedUrl() {
-  if (!els.shareCreatedUrl.value) return;
-  try {
-    await navigator.clipboard.writeText(els.shareCreatedUrl.value);
-    announce('共有URLをコピーしました。');
-  } catch {
-    els.shareCreatedUrl.select();
-    document.execCommand('copy');
-    announce('共有URLをコピーしました。');
-  }
+function openShareSearch() {
+  showMenu(false);
+  if (!ensureOnlineForExternalNavigation()) return;
+  const returnTo = `${window.location.origin}${window.location.pathname}`;
+  const url = buildShareSearchUrl({ shareAppBaseUrl, returnTo });
+  window.location.assign(url);
 }
 
 function showListError(show, message) {
@@ -815,55 +641,8 @@ els.menuBtn.addEventListener('click', () => {
 });
 els.exportBtn.addEventListener('click', exportBackup);
 els.importBtn.addEventListener('click', triggerImport);
-els.shareOpenBtn.addEventListener('click', () => {
-  showShareSheet();
-});
-els.shareSheetClose?.addEventListener('click', hideSheet);
-els.shareGameSelect?.addEventListener('change', async () => {
-  await loadShareCharacters(els.shareGameSelect.value, els.shareCharacterSelect);
-});
-els.shareSearchGameSelect?.addEventListener('change', async () => {
-  await loadShareCharacters(els.shareSearchGameSelect.value, els.shareSearchCharacterSelect);
-  await runShareSearch({ resetParent: true });
-});
-els.shareSearchCharacterSelect?.addEventListener('change', () => {
-  runShareSearch({ resetParent: true });
-});
-els.shareSortSelect?.addEventListener('change', () => {
-  runShareSearch();
-});
-els.sharePublishSubmit?.addEventListener('click', () => {
-  submitSharePublish();
-});
-els.shareCreatedCopy?.addEventListener('click', () => {
-  copyShareCreatedUrl();
-});
-els.shareSearchResults?.addEventListener('click', (event) => {
-  const button = event.target.closest('button[data-action="share-detail"]');
-  if (!button) return;
-  const listId = button.dataset.listId;
-  if (!listId) return;
-  showShareDetail(listId);
-});
-els.shareDetailImport?.addEventListener('click', async () => {
-  if (!shareSelectedDetailId) return;
-  try {
-    await importSharedList(shareSelectedDetailId);
-    await runShareSearch();
-  } catch (error) {
-    announce(mapErrorMessage(error, 'インポートに失敗しました。'));
-  }
-});
-els.shareDetailChildren?.addEventListener('click', async () => {
-  if (!shareSelectedDetailId) return;
-  shareCurrentParentId = shareSelectedDetailId;
-  els.shareSortSelect.value = 'imports_desc';
-  await runShareSearch();
-});
-els.shareResetParent?.addEventListener('click', async () => {
-  shareCurrentParentId = null;
-  await runShareSearch();
-});
+els.sharePublishBtn?.addEventListener('click', openSharePublish);
+els.shareSearchBtn?.addEventListener('click', openShareSearch);
 els.importFileInput.addEventListener('change', (event) => {
   const file = event.target.files?.[0];
   handleImportFile(file);
@@ -983,7 +762,6 @@ document.addEventListener('keydown', (event) => {
   if (
     event.key === 'Escape' &&
     (!els.listSheet.classList.contains('is-hidden') ||
-      !els.shareSheet.classList.contains('is-hidden') ||
       !els.bulkSheet.classList.contains('is-hidden'))
   ) {
     hideSheet();
@@ -1104,5 +882,11 @@ document.body.addEventListener('click', (event) => {
     announce(`「${task.title}」を削除しました。`);
   }
 });
+
+if (shouldShowImportSuccess(window.location.search)) {
+  window.alert('タスクリストをインポートしました');
+  const clearedUrl = `${window.location.origin}${window.location.pathname}`;
+  window.history.replaceState({}, '', clearedUrl);
+}
 
 render();
