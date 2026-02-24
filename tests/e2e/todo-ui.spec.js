@@ -283,6 +283,33 @@ test('footer links can reach terms/privacy and each page is directly accessible'
   await expect(page.getByText('個人情報・機密情報は入力しないでください。')).toBeVisible();
 });
 
+test('menu separates public operations and keeps local editing when offline', async ({ page, context }) => {
+  await context.setOffline(true);
+  await page.goto('/index.html');
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await expect(page.getByRole('menuitem', { name: 'このタスクリストを公開' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'タスクリストを検索' })).toBeVisible();
+
+  const beforeUrl = page.url();
+  await page.getByRole('menuitem', { name: 'このタスクリストを公開' }).click();
+  await expect(page).toHaveURL(beforeUrl);
+
+  await addTask(page, 'offline-local-task');
+  await expect(page.locator('#active-list .task-item', { hasText: 'offline-local-task' })).toHaveCount(1);
+  await expect(page.locator('#live-region')).toContainText('オフラインのため共有アプリへ遷移できません。ローカル編集は継続できます。');
+});
+
+test('shows import success dialog on return from sharing app', async ({ page }) => {
+  page.once('dialog', (dialog) => {
+    expect(dialog.message()).toBe('タスクリストをインポートしました');
+    dialog.accept();
+  });
+
+  await page.goto('/index.html?share_import=success');
+  await expect(page).toHaveURL(/\/index\.html$/);
+});
+
 test('active tasks can be reordered only in reorder mode and persist after reload', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
 
@@ -376,114 +403,13 @@ test('selection mode can move and copy tasks to another list', async ({ page }) 
   await expect(page.locator('#active-list .task-item')).toHaveCount(2);
 });
 
-test('share UI supports publish, search, detail, import and derived transition', async ({ page }) => {
-  const sharedPayload = JSON.stringify({
-    schemaVersion: 2,
-    currentListId: 'shared-list',
-    lists: [{ id: 'shared-list', name: '公開リスト', createdAt: 1 }],
-    tasks: [{ id: 'st1', title: '共有タスク', status: 'active', count: 0, listId: 'shared-list' }],
+test('public actions navigate to sharing app with return_to', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.SHARE_APP_BASE_URL = 'https://sharing.example.com';
   });
-
-  await page.route('http://127.0.0.1:8787/catalog/games', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([{ game_key: 'sf6', game_name: 'Street Fighter 6' }]),
-    });
-  });
-
-  await page.route('http://127.0.0.1:8787/catalog/characters?*', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([{ character_key: 'ryu', character_name: 'Ryu' }]),
-    });
-  });
-
-  await page.route('http://127.0.0.1:8787/lists', async (route) => {
-    if (route.request().method() !== 'POST') return route.fallback();
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify({ id: 'public-1', share_url: 'http://127.0.0.1:8787/lists/public-1' }),
-    });
-  });
-
-  await page.route('http://127.0.0.1:8787/search?*', async (route) => {
-    const url = new URL(route.request().url());
-    const parentId = url.searchParams.get('parent_id');
-    const id = parentId ? 'child-1' : 'public-1';
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([
-        {
-          id,
-          title: parentId ? '派生リスト' : '公開リスト',
-          game_key: 'sf6',
-          character_key: 'ryu',
-          version_text: null,
-          description_snippet: 'desc',
-          imports_count: 3,
-          created_at: '2026-02-24T00:00:00.000Z',
-        },
-      ]),
-    });
-  });
-
-  await page.route('http://127.0.0.1:8787/lists/public-1', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'public-1',
-        title: '公開リスト',
-        game_key: 'sf6',
-        character_key: 'ryu',
-        version_text: null,
-        description: '公開説明',
-        payload_json: sharedPayload,
-        imports_count: 3,
-        parent_id: null,
-        hidden: false,
-        is_deleted: false,
-        created_at: '2026-02-24T00:00:00.000Z',
-      }),
-    });
-  });
-
-  await page.route('http://127.0.0.1:8787/lists/public-1/imported', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ id: 'public-1', imports_count: 4 }),
-    });
-  });
-
-  await addTask(page, `公開元-${Date.now()}`);
+  await page.goto('/index.html');
 
   await page.getByRole('button', { name: 'メニュー' }).click();
-  await page.getByRole('menuitem', { name: 'このタスクリストを公開' }).click();
-
-  await page.locator('#share-game-select').selectOption('sf6');
-  await page.locator('#share-character-select').selectOption('ryu');
-  await page.getByRole('button', { name: '公開URLを作成' }).click();
-  await expect(page.locator('#share-created-row')).toBeVisible();
-  await expect(page.locator('#share-created-url')).toHaveValue('http://127.0.0.1:8787/lists/public-1');
-
-  await page.locator('#share-search-game-select').selectOption('sf6');
-  await page.locator('#share-search-character-select').selectOption('ryu');
-  await expect(page.locator('#share-search-results .list-item-btn', { hasText: '公開リスト' })).toHaveCount(1);
-
-  const detailButton = page.locator('#share-search-results button[data-action="share-detail"]').first();
-  await detailButton.scrollIntoViewIfNeeded();
-  await detailButton.click();
-  await expect(page.locator('#share-detail-section')).toBeVisible();
-  await expect(page.locator('#share-detail-description')).toContainText('公開説明');
-
-  await page.getByRole('button', { name: 'このリストをインポート' }).click();
-  await expect(page.locator('#live-region')).toContainText('インポートしました');
-
-  await page.getByRole('button', { name: 'このタスクリストからの派生' }).click();
-  await expect(page.locator('#share-search-results .list-item-btn', { hasText: '派生リスト' })).toHaveCount(1);
+  await page.getByRole('menuitem', { name: 'タスクリストを検索' }).click();
+  await expect(page).toHaveURL(/https:\/\/sharing\.example\.com\/search\?return_to=/);
 });

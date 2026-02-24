@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSharePayload, resolveShareApiBaseUrl } from '../src/ui/share-utils.js';
+import {
+  buildSharePayload,
+  buildSharePublishUrl,
+  buildShareSearchUrl,
+  resolveShareApiBaseUrl,
+  resolveShareAppBaseUrl,
+  shouldShowImportSuccess,
+} from '../src/ui/share-utils.js';
 
 const baseState = {
   schemaVersion: 2,
@@ -24,6 +31,38 @@ test('resolveShareApiBaseUrl uses default when global variable is missing', () =
 test('resolveShareApiBaseUrl trims trailing slash', () => {
   const url = resolveShareApiBaseUrl({ SHARE_API_BASE_URL: 'https://api.example.com/' });
   assert.equal(url, 'https://api.example.com');
+});
+
+test('resolveShareAppBaseUrl uses default when global variable is missing', () => {
+  const url = resolveShareAppBaseUrl({});
+  assert.equal(url, 'http://127.0.0.1:4173');
+});
+
+test('buildSharePublishUrl includes payload_json and return_to query', () => {
+  const url = buildSharePublishUrl({
+    shareAppBaseUrl: 'https://sharing.example.com',
+    payloadJson: '{"foo":1}',
+    returnTo: 'https://todo.example.com/index.html?from=share',
+  });
+  assert.equal(
+    url,
+    'https://sharing.example.com/publish-confirm?payload_json=%7B%22foo%22%3A1%7D&return_to=https%3A%2F%2Ftodo.example.com%2Findex.html%3Ffrom%3Dshare',
+  );
+});
+
+test('buildShareSearchUrl includes return_to query', () => {
+  const url = buildShareSearchUrl({
+    shareAppBaseUrl: 'https://sharing.example.com/',
+    returnTo: 'https://todo.example.com/index.html',
+  });
+  assert.equal(url, 'https://sharing.example.com/search?return_to=https%3A%2F%2Ftodo.example.com%2Findex.html');
+});
+
+test('shouldShowImportSuccess detects imported status in query parameters', () => {
+  assert.equal(shouldShowImportSuccess('?share_import=success'), true);
+  assert.equal(shouldShowImportSuccess('?share_status=imported'), true);
+  assert.equal(shouldShowImportSuccess('?share_imported=1'), true);
+  assert.equal(shouldShowImportSuccess('?share_status=failed'), false);
 });
 
 test('buildSharePayload exports only selected list tasks', () => {
