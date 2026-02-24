@@ -361,17 +361,129 @@ test('selection mode can move and copy tasks to another list', async ({ page }) 
 
   await page.getByRole('button', { name: 'タスク選択' }).click();
   await page.locator('#active-list .task-item').nth(0).locator('input[data-action="toggle-select"]').check();
-  await page.getByRole('button', { name: '移動' }).click();
+  await page.getByRole('button', { name: '移動', exact: true }).click();
   await page.locator('#bulk-destination-list .list-item-btn', { hasText: listB }).click();
 
   await expect(page.locator('#active-list .task-item')).toHaveCount(1);
 
   await page.getByRole('button', { name: 'タスク選択' }).click();
   await page.locator('#active-list .task-item').nth(0).locator('input[data-action="toggle-select"]').check();
-  await page.getByRole('button', { name: 'コピー' }).click();
+  await page.getByRole('button', { name: 'コピー', exact: true }).click();
   await page.locator('#bulk-destination-list .list-item-btn', { hasText: listB }).click();
 
   await openListSheet(page);
   await page.getByRole('button', { name: listB, exact: true }).click();
   await expect(page.locator('#active-list .task-item')).toHaveCount(2);
+});
+
+test('share UI supports publish, search, detail, import and derived transition', async ({ page }) => {
+  const sharedPayload = JSON.stringify({
+    schemaVersion: 2,
+    currentListId: 'shared-list',
+    lists: [{ id: 'shared-list', name: '公開リスト', createdAt: 1 }],
+    tasks: [{ id: 'st1', title: '共有タスク', status: 'active', count: 0, listId: 'shared-list' }],
+  });
+
+  await page.route('http://127.0.0.1:8787/catalog/games', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{ game_key: 'sf6', game_name: 'Street Fighter 6' }]),
+    });
+  });
+
+  await page.route('http://127.0.0.1:8787/catalog/characters?*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{ character_key: 'ryu', character_name: 'Ryu' }]),
+    });
+  });
+
+  await page.route('http://127.0.0.1:8787/lists', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 'public-1', share_url: 'http://127.0.0.1:8787/lists/public-1' }),
+    });
+  });
+
+  await page.route('http://127.0.0.1:8787/search?*', async (route) => {
+    const url = new URL(route.request().url());
+    const parentId = url.searchParams.get('parent_id');
+    const id = parentId ? 'child-1' : 'public-1';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id,
+          title: parentId ? '派生リスト' : '公開リスト',
+          game_key: 'sf6',
+          character_key: 'ryu',
+          version_text: null,
+          description_snippet: 'desc',
+          imports_count: 3,
+          created_at: '2026-02-24T00:00:00.000Z',
+        },
+      ]),
+    });
+  });
+
+  await page.route('http://127.0.0.1:8787/lists/public-1', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'public-1',
+        title: '公開リスト',
+        game_key: 'sf6',
+        character_key: 'ryu',
+        version_text: null,
+        description: '公開説明',
+        payload_json: sharedPayload,
+        imports_count: 3,
+        parent_id: null,
+        hidden: false,
+        is_deleted: false,
+        created_at: '2026-02-24T00:00:00.000Z',
+      }),
+    });
+  });
+
+  await page.route('http://127.0.0.1:8787/lists/public-1/imported', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 'public-1', imports_count: 4 }),
+    });
+  });
+
+  await addTask(page, `公開元-${Date.now()}`);
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await page.getByRole('menuitem', { name: 'このタスクリストを公開' }).click();
+
+  await page.locator('#share-game-select').selectOption('sf6');
+  await page.locator('#share-character-select').selectOption('ryu');
+  await page.getByRole('button', { name: '公開URLを作成' }).click();
+  await expect(page.locator('#share-created-row')).toBeVisible();
+  await expect(page.locator('#share-created-url')).toHaveValue('http://127.0.0.1:8787/lists/public-1');
+
+  await page.locator('#share-search-game-select').selectOption('sf6');
+  await page.locator('#share-search-character-select').selectOption('ryu');
+  await expect(page.locator('#share-search-results .list-item-btn', { hasText: '公開リスト' })).toHaveCount(1);
+
+  const detailButton = page.locator('#share-search-results button[data-action="share-detail"]').first();
+  await detailButton.scrollIntoViewIfNeeded();
+  await detailButton.click();
+  await expect(page.locator('#share-detail-section')).toBeVisible();
+  await expect(page.locator('#share-detail-description')).toContainText('公開説明');
+
+  await page.getByRole('button', { name: 'このリストをインポート' }).click();
+  await expect(page.locator('#live-region')).toContainText('インポートしました');
+
+  await page.getByRole('button', { name: 'このタスクリストからの派生' }).click();
+  await expect(page.locator('#share-search-results .list-item-btn', { hasText: '派生リスト' })).toHaveCount(1);
 });

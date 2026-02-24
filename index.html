@@ -14,6 +14,8 @@
         <div id="menu-popover" class="menu-popover is-hidden" role="menu" aria-label="データ管理メニュー">
           <button id="export-btn" class="menu-item-btn" type="button" role="menuitem">データをエクスポート</button>
           <button id="import-btn" class="menu-item-btn" type="button" role="menuitem">データをインポート</button>
+          <div class="menu-divider" role="separator" aria-hidden="true"></div>
+          <button id="share-open-btn" class="menu-item-btn" type="button" role="menuitem">このタスクリストを公開</button>
         </div>
       </header>
 
@@ -98,6 +100,64 @@
       </div>
       <p id="list-error" class="error is-hidden" role="alert">リスト名を入力してください。</p>
       <ul id="list-items" class="list-items"></ul>
+    </section>
+
+    <section
+      id="share-sheet"
+      class="add-sheet list-sheet-modal share-sheet is-hidden"
+      aria-label="共有モーダル"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-sheet-title"
+    >
+      <div class="list-sheet-header">
+        <h2 id="share-sheet-title">タスクリスト共有</h2>
+        <button id="share-sheet-close" type="button" aria-label="共有モーダルを閉じる">閉じる</button>
+      </div>
+      <section class="share-section" aria-labelledby="share-publish-title">
+        <h3 id="share-publish-title">公開する</h3>
+        <label for="share-title-input">タイトル（必須）</label>
+        <input id="share-title-input" type="text" />
+        <label for="share-game-select">ゲーム（必須）</label>
+        <select id="share-game-select"></select>
+        <label for="share-character-select">キャラクター（必須）</label>
+        <select id="share-character-select"></select>
+        <label for="share-version-input">バージョン（任意）</label>
+        <input id="share-version-input" type="text" placeholder="例: Ver.1.03" />
+        <label for="share-description-input">説明（任意）</label>
+        <textarea id="share-description-input" rows="3" placeholder="目的やメモ"></textarea>
+        <p class="share-catalog-note">catalog未登録の組み合わせは投稿できず、提案として記録されます。</p>
+        <p id="share-publish-error" class="error is-hidden" role="alert"></p>
+        <button id="share-publish-submit" class="btn-primary" type="button">公開URLを作成</button>
+        <div id="share-created-row" class="share-created-row is-hidden">
+          <input id="share-created-url" type="text" readonly />
+          <button id="share-created-copy" type="button">コピー</button>
+        </div>
+      </section>
+      <section class="share-section" aria-labelledby="share-search-title">
+        <h3 id="share-search-title">公開リストを探す</h3>
+        <label for="share-search-game-select">ゲーム</label>
+        <select id="share-search-game-select"></select>
+        <label for="share-search-character-select">キャラクター</label>
+        <select id="share-search-character-select"></select>
+        <label for="share-sort-select">並び順</label>
+        <select id="share-sort-select">
+          <option value="imports_desc">人気順（imports）</option>
+          <option value="created_desc">新着順（created）</option>
+        </select>
+        <button id="share-reset-parent" type="button" class="is-hidden">全体一覧に戻る</button>
+        <p id="share-search-hint" class="bulk-sheet-description">ゲームとキャラクターを選択してください。</p>
+        <ul id="share-search-results" class="list-items"></ul>
+      </section>
+      <section id="share-detail-section" class="share-section is-hidden" aria-labelledby="share-detail-title">
+        <h3 id="share-detail-title">詳細</h3>
+        <p id="share-detail-meta" class="bulk-sheet-description"></p>
+        <pre id="share-detail-description" class="copy-area"></pre>
+        <div class="sheet-actions">
+          <button id="share-detail-children" type="button">このタスクリストからの派生</button>
+          <button id="share-detail-import" class="btn-primary" type="button">このリストをインポート</button>
+        </div>
+      </section>
     </section>
 
     <section
