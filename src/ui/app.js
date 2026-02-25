@@ -474,9 +474,11 @@ function ensureOnlineForExternalNavigation() {
 function openSharePublish() {
   showMenu(false);
   if (!ensureOnlineForExternalNavigation()) return;
+  const currentList = getCurrentList();
   const returnTo = `${window.location.origin}${window.location.pathname}`;
   const url = buildSharePublishUrl({
     shareAppBaseUrl,
+    title: currentList?.name ?? 'タスクリスト',
     payloadJson: buildCurrentListPayloadJson(),
     returnTo,
   });

@@ -35,18 +35,19 @@ test('resolveShareApiBaseUrl trims trailing slash', () => {
 
 test('resolveShareAppBaseUrl uses default when global variable is missing', () => {
   const url = resolveShareAppBaseUrl({});
-  assert.equal(url, 'http://127.0.0.1:4173');
+  assert.equal(url, 'http://127.0.0.1:8787');
 });
 
-test('buildSharePublishUrl includes payload_json and return_to query', () => {
+test('buildSharePublishUrl includes title, payload_json and return_to query', () => {
   const url = buildSharePublishUrl({
     shareAppBaseUrl: 'https://sharing.example.com',
+    title: 'Ryu Public',
     payloadJson: '{"foo":1}',
     returnTo: 'https://todo.example.com/index.html?from=share',
   });
   assert.equal(
     url,
-    'https://sharing.example.com/publish-confirm?payload_json=%7B%22foo%22%3A1%7D&return_to=https%3A%2F%2Ftodo.example.com%2Findex.html%3Ffrom%3Dshare',
+    'https://sharing.example.com/ui/publish?title=Ryu+Public&payload_json=%7B%22foo%22%3A1%7D&return_to=https%3A%2F%2Ftodo.example.com%2Findex.html%3Ffrom%3Dshare',
   );
 });
 
@@ -55,14 +56,13 @@ test('buildShareSearchUrl includes return_to query', () => {
     shareAppBaseUrl: 'https://sharing.example.com/',
     returnTo: 'https://todo.example.com/index.html',
   });
-  assert.equal(url, 'https://sharing.example.com/search?return_to=https%3A%2F%2Ftodo.example.com%2Findex.html');
+  assert.equal(url, 'https://sharing.example.com/ui/search?return_to=https%3A%2F%2Ftodo.example.com%2Findex.html');
 });
 
 test('shouldShowImportSuccess detects imported status in query parameters', () => {
-  assert.equal(shouldShowImportSuccess('?share_import=success'), true);
-  assert.equal(shouldShowImportSuccess('?share_status=imported'), true);
-  assert.equal(shouldShowImportSuccess('?share_imported=1'), true);
-  assert.equal(shouldShowImportSuccess('?share_status=failed'), false);
+  assert.equal(shouldShowImportSuccess('?imported=1'), true);
+  assert.equal(shouldShowImportSuccess('?imported=0'), false);
+  assert.equal(shouldShowImportSuccess('?share_imported=1'), false);
 });
 
 test('buildSharePayload exports only selected list tasks', () => {

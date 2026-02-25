@@ -288,16 +288,16 @@ test('menu separates public operations and keeps local editing when offline', as
   await page.goto('/index.html');
 
   await page.getByRole('button', { name: 'メニュー' }).click();
-  await expect(page.getByRole('menuitem', { name: 'このタスクリストを公開' })).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: 'タスクリストを検索' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /このタスクリストを公開/ })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /タスクリストを検索/ })).toBeVisible();
 
   const beforeUrl = page.url();
-  await page.getByRole('menuitem', { name: 'このタスクリストを公開' }).click();
+  await page.getByRole('menuitem', { name: /このタスクリストを公開/ }).click();
   await expect(page).toHaveURL(beforeUrl);
+  await expect(page.locator('#live-region')).toContainText('オフラインのため共有アプリへ遷移できません。ローカル編集は継続できます。');
 
   await addTask(page, 'offline-local-task');
   await expect(page.locator('#active-list .task-item', { hasText: 'offline-local-task' })).toHaveCount(1);
-  await expect(page.locator('#live-region')).toContainText('オフラインのため共有アプリへ遷移できません。ローカル編集は継続できます。');
 });
 
 test('shows import success dialog on return from sharing app', async ({ page }) => {
@@ -306,7 +306,7 @@ test('shows import success dialog on return from sharing app', async ({ page }) 
     dialog.accept();
   });
 
-  await page.goto('/index.html?share_import=success');
+  await page.goto('/index.html?imported=1');
   await expect(page).toHaveURL(/\/index\.html$/);
 });
 

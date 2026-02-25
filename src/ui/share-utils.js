@@ -1,5 +1,5 @@
 export const DEFAULT_SHARE_API_BASE_URL = 'http://127.0.0.1:8787';
-export const DEFAULT_SHARE_APP_BASE_URL = 'http://127.0.0.1:4173';
+export const DEFAULT_SHARE_APP_BASE_URL = 'http://127.0.0.1:8787';
 
 function trimTrailingSlash(value) {
   return value.endsWith('/') ? value.slice(0, -1) : value;
@@ -73,9 +73,17 @@ export function buildSharePayload(state, {
   };
 }
 
-function buildShareUrl(path, { shareAppBaseUrl, returnTo, payloadJson }) {
+function buildShareUrl(path, {
+  shareAppBaseUrl,
+  returnTo,
+  payloadJson,
+  title,
+}) {
   const baseUrl = trimTrailingSlash(shareAppBaseUrl);
   const params = new URLSearchParams();
+  if (typeof title === 'string' && title.length > 0) {
+    params.set('title', title);
+  }
   if (typeof payloadJson === 'string' && payloadJson.length > 0) {
     params.set('payload_json', payloadJson);
   }
@@ -86,17 +94,20 @@ function buildShareUrl(path, { shareAppBaseUrl, returnTo, payloadJson }) {
   return query ? `${baseUrl}${path}?${query}` : `${baseUrl}${path}`;
 }
 
-export function buildSharePublishUrl({ shareAppBaseUrl, returnTo, payloadJson }) {
-  return buildShareUrl('/publish-confirm', { shareAppBaseUrl, returnTo, payloadJson });
+export function buildSharePublishUrl({
+  shareAppBaseUrl,
+  returnTo,
+  payloadJson,
+  title,
+}) {
+  return buildShareUrl('/ui/publish', { shareAppBaseUrl, returnTo, payloadJson, title });
 }
 
 export function buildShareSearchUrl({ shareAppBaseUrl, returnTo }) {
-  return buildShareUrl('/search', { shareAppBaseUrl, returnTo });
+  return buildShareUrl('/ui/search', { shareAppBaseUrl, returnTo });
 }
 
 export function shouldShowImportSuccess(search) {
   const params = new URLSearchParams(search);
-  return params.get('share_import') === 'success'
-    || params.get('share_status') === 'imported'
-    || params.get('share_imported') === '1';
+  return params.get('imported') === '1';
 }
