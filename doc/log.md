@@ -6,6 +6,13 @@
 - `README.md` にブランドコンセプト節を追加し、関連アプリ `NextRound Combos` との関係を明記。
 - `doc/runbook.md` のサービス名・関連アプリ表記を同期。
 
+## 2026-02-26 (Share API config + return import fix)
+- 共有APIのURL解決を `window.__APP_CONFIG__.API_BASE_URL` 優先へ変更し、GitHub Pages デプロイ時に本番URLを `app-config.js` へ注入する運用へ移行。
+- 共有アプリ復帰時の処理を修正し、`imported=1` だけで成功表示する挙動を廃止。
+- `list_id` 系クエリを基に `/lists/{id}` を取得して `payload_json` をマージする実取り込みフローへ更新。
+- `list_id` 欠落/取得失敗時は失敗通知に統一し、誤った成功表示を防止。
+- import関連E2E（`npm run test:e2e -- --grep import`）を再実行し、4件すべて通過を確認。
+
 ## 2026-02-20 (Task list modal UX改善)
 - タスクリスト管理UIを下部シートから画面中央モーダルへ変更し、モバイルでのタップしやすさを改善。
 - 各リスト行は `...` メニュー経由で `名前変更` / `削除` を実行する方式に戻した。

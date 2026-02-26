@@ -29,6 +29,8 @@
 - REQ-EX-01: localStorage破損時にフォールバック+警告
 - REQ-SHARE-CONFIG-01: 共有APIのベースURLは `window.__APP_CONFIG__.API_BASE_URL` を最優先し、環境変数経由を次点として解決できる
 - REQ-SHARE-CONFIG-02: 本番公開時は Cloudflare Workers 本番URL を使用し、ローカルIP依存を持ち込まない
+- REQ-SHARE-IMPORT-01: 共有アプリ復帰時は `imported=1` と `list_id` 系クエリを基に共有リストを取得し、ローカルへマージする
+- REQ-SHARE-IMPORT-02: 共有復帰時に `list_id` 欠落または取得失敗なら、成功扱いにせず失敗通知する
 
 ## 実装タスク
 - [x] IMP-CORE-01 (`REQ-UC1`,`REQ-UC2`,`REQ-UC3`,`REQ-UC4`,`REQ-UC5`)
@@ -59,6 +61,8 @@
   - `src/ui/share-utils.js` と `index.html` でランタイム設定優先のURL解決へ更新
 - [x] IMP-DEPLOY-01 (`REQ-SHARE-CONFIG-02`)
   - `.github/workflows/deploy-pages.yml` を追加し、本番 `API_BASE_URL` を注入
+- [x] IMP-SHARE-IMPORT-01 (`REQ-SHARE-IMPORT-01`,`REQ-SHARE-IMPORT-02`)
+  - `src/ui/app.js` で共有復帰時に `list_id` から `/lists/{id}` を取得して取り込み、失敗分岐を明確化
 
 ## テストタスク（TDDトレース）
 - [x] TEST-UC1-01 (`REQ-UC1`) `tests/tasks.test.js`
@@ -75,6 +79,7 @@
 - [x] TEST-UC12-01 (`REQ-UC12`) `tests/lists.test.js`, `tests/e2e/todo-ui.spec.js`
 - [x] TEST-PERSIST-01 (`REQ-PERSIST-01`,`REQ-EX-01`) `tests/store.test.js`
 - [x] TEST-SHARE-CONFIG-01 (`REQ-SHARE-CONFIG-01`,`REQ-SHARE-CONFIG-02`) `tests/share-utils.test.js`, `tests/share-api.test.js`
+- [x] TEST-SHARE-IMPORT-01 (`REQ-SHARE-IMPORT-01`,`REQ-SHARE-IMPORT-02`) `tests/share-utils.test.js`, `tests/e2e/todo-ui.spec.js`
 
 ## トレーサビリティ表
 | Requirement | Implementation | Test |
@@ -95,3 +100,5 @@
 | REQ-EX-01 | IMP-STORE-01 | TEST-PERSIST-01 |
 | REQ-SHARE-CONFIG-01 | IMP-SHARE-CONFIG-01 | TEST-SHARE-CONFIG-01 |
 | REQ-SHARE-CONFIG-02 | IMP-SHARE-CONFIG-01, IMP-DEPLOY-01 | TEST-SHARE-CONFIG-01 |
+| REQ-SHARE-IMPORT-01 | IMP-SHARE-IMPORT-01 | TEST-SHARE-IMPORT-01 |
+| REQ-SHARE-IMPORT-02 | IMP-SHARE-IMPORT-01 | TEST-SHARE-IMPORT-01 |

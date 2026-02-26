@@ -45,7 +45,13 @@
 - [ ] `npm test` の `REQ-UC1`〜`REQ-UC6` 系テスト結果を確認
 - [ ] `localStorage` の `fg_task_manager_v1` が破損していないか確認
 
-### 3) CI失敗
+### 3) 共有アプリから戻ったのにインポートされない
+- [ ] 復帰URLに `imported=1` と `list_id`（または `listId` / `share_list_id`）があるか確認
+- [ ] `https://fgc-todo-sharing.nextround.workers.dev/lists/{list_id}` の `payload_json` が Tasks の schemaVersion=2 形式か確認
+- [ ] Console に `CORS` / `network` エラーがないか確認
+- [ ] `npm run test:e2e -- --grep import` を実行し、復帰導線テストを再現確認
+
+### 4) CI失敗
 - [ ] `test` ジョブ失敗時: まず `npm test` をローカル再現
 - [ ] `build` ジョブ失敗時: `build` script追加/変更有無を確認
 - [ ] `e2e_optional` 失敗時: ブラウザ依存要因と環境差分を確認
