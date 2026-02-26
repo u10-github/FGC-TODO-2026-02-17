@@ -410,6 +410,6 @@ test('public actions navigate to sharing app with return_to', async ({ page }) =
   await page.goto('/index.html');
 
   await page.getByRole('button', { name: 'メニュー' }).click();
-  await page.getByRole('menuitem', { name: 'タスクリストを検索' }).click();
+  await page.getByRole('menuitem', { name: 'タスクリストを検索（NextRound Combosに移動）' }).click();
   await expect(page).toHaveURL(/https:\/\/sharing\.example\.com\/search\?return_to=/);
 });
