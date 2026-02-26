@@ -141,3 +141,14 @@ export function shouldShowImportSuccess(search) {
   const params = new URLSearchParams(search);
   return params.get('imported') === '1';
 }
+
+export function resolveImportedListId(search) {
+  const params = new URLSearchParams(search);
+  const candidate = params.get('list_id')
+    || params.get('listId')
+    || params.get('share_list_id')
+    || params.get('share_list');
+  if (typeof candidate !== 'string') return null;
+  const normalized = candidate.trim();
+  return normalized.length > 0 ? normalized : null;
+}

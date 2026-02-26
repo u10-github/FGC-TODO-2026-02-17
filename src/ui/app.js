@@ -12,9 +12,11 @@ import {
 } from '../core/tasks.js';
 import { deleteList, renameList } from '../core/lists.js';
 import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
+import { createShareApiClient } from './share-api.js';
 import {
   buildSharePublishUrl,
   buildShareSearchUrl,
+  resolveImportedListId,
   resolveShareAppBaseUrl,
   shouldShowImportSuccess,
 } from './share-utils.js';
@@ -75,6 +77,7 @@ let isReorderMode = false;
 let isSelectionMode = false;
 const selectedTaskIds = new Set();
 let pendingBulkAction = null;
+const shareApiClient = createShareApiClient();
 
 function createListId() {
   return `list-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -885,10 +888,30 @@ document.body.addEventListener('click', (event) => {
   }
 });
 
-if (shouldShowImportSuccess(window.location.search)) {
-  window.alert('タスクリストをインポートしました');
+async function handleShareImportReturn() {
+  if (!shouldShowImportSuccess(window.location.search)) return;
+  const listId = resolveImportedListId(window.location.search);
+  if (!listId) {
+    window.alert('インポート元リストIDが見つからないため取り込みできませんでした。');
+    const clearedUrl = `${window.location.origin}${window.location.pathname}`;
+    window.history.replaceState({}, '', clearedUrl);
+    return;
+  }
+
+  try {
+    const sharedList = await shareApiClient.getList(listId);
+    const raw = typeof sharedList?.payload_json === 'string' ? sharedList.payload_json : '';
+    if (!raw) throw new Error('payload_json is missing');
+    const importedState = importStateData(raw);
+    const nextState = mergeImportedState(state, importedState);
+    commit(nextState);
+    window.alert('タスクリストをインポートしました');
+  } catch {
+    window.alert('タスクリストのインポートに失敗しました。');
+  }
   const clearedUrl = `${window.location.origin}${window.location.pathname}`;
   window.history.replaceState({}, '', clearedUrl);
 }
 
+await handleShareImportReturn();
 render();

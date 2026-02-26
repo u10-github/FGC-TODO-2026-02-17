@@ -6,6 +6,7 @@ import {
   buildShareSearchUrl,
   resolveShareApiBaseUrl,
   resolveShareAppBaseUrl,
+  resolveImportedListId,
   shouldShowImportSuccess,
 } from '../src/ui/share-utils.js';
 
@@ -79,6 +80,15 @@ test('shouldShowImportSuccess detects imported status in query parameters', () =
   assert.equal(shouldShowImportSuccess('?imported=1'), true);
   assert.equal(shouldShowImportSuccess('?imported=0'), false);
   assert.equal(shouldShowImportSuccess('?share_imported=1'), false);
+});
+
+test('resolveImportedListId picks list_id from query parameters', () => {
+  assert.equal(resolveImportedListId('?imported=1&list_id=abc-123'), 'abc-123');
+});
+
+test('resolveImportedListId accepts fallback keys and trims whitespace', () => {
+  assert.equal(resolveImportedListId('?imported=1&listId=%20def-456%20'), 'def-456');
+  assert.equal(resolveImportedListId('?imported=1&share_list_id=ghi-789'), 'ghi-789');
 });
 
 test('buildSharePayload exports only selected list tasks', () => {

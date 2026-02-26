@@ -300,14 +300,42 @@ test('menu separates public operations and keeps local editing when offline', as
   await expect(page.locator('#active-list .task-item', { hasText: 'offline-local-task' })).toHaveCount(1);
 });
 
-test('shows import success dialog on return from sharing app', async ({ page }) => {
+test('shows import error dialog when sharing app return lacks list id', async ({ page }) => {
   page.once('dialog', (dialog) => {
-    expect(dialog.message()).toBe('タスクリストをインポートしました');
+    expect(dialog.message()).toBe('インポート元リストIDが見つからないため取り込みできませんでした。');
     dialog.accept();
   });
 
   await page.goto('/index.html?imported=1');
   await expect(page).toHaveURL(/\/index\.html$/);
+});
+
+test('imports shared list payload when list_id is provided on return', async ({ page }) => {
+  await page.route('https://fgc-todo-sharing.nextround.workers.dev/lists/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'abc-import',
+        payload_json: JSON.stringify({
+          schemaVersion: 2,
+          currentListId: 'remote-list-1',
+          lists: [{ id: 'remote-list-1', name: '共有リスト', createdAt: 1 }],
+          tasks: [{ id: 'remote-task-1', title: '共有タスク', status: 'active', count: 0, listId: 'remote-list-1' }],
+        }),
+      }),
+    });
+  });
+
+  page.once('dialog', (dialog) => {
+    expect(dialog.message()).toBe('タスクリストをインポートしました');
+    dialog.accept();
+  });
+
+  await page.goto('/index.html?imported=1&list_id=abc-import');
+  await expect(page).toHaveURL(/\/index\.html$/);
+  await expect(page.locator('#list-switch-btn')).toHaveText('共有リスト');
+  await expect(page.locator('#active-list .task-item', { hasText: '共有タスク' })).toHaveCount(1);
 });
 
 test('active tasks can be reordered only in reorder mode and persist after reload', async ({ page }) => {
