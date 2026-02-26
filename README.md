@@ -34,6 +34,26 @@
   - E2E: Playwright
 - 配置: 静的ファイル構成（GitHub Pages 配置を想定）
 
+## API接続設定
+
+`NextRound Combos` 連携先URLは次の優先順位で解決します。
+
+1. `window.__APP_CONFIG__.API_BASE_URL`
+2. ビルド時環境変数（`VITE_API_BASE_URL` / `API_BASE_URL`）
+3. フォールバック: `https://fgc-todo-sharing.nextround.workers.dev`
+
+`window.__APP_CONFIG__` は `index.html` で `app-config.js` を先に読み込むことで設定できます。
+
+- 本番（GitHub Pages）: `.github/workflows/deploy-pages.yml` が `API_BASE_URL` / `SHARE_APP_BASE_URL` を本番URLで注入
+- 開発（ローカル）: `app-config.js` を一時的に次のように上書きすればローカルAPIを利用可能
+
+```js
+window.__APP_CONFIG__ = {
+  API_BASE_URL: "http://127.0.0.1:8787",
+  SHARE_APP_BASE_URL: "http://127.0.0.1:8787"
+};
+```
+
 ## セットアップ
 
 前提:

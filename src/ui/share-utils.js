@@ -1,24 +1,54 @@
-export const DEFAULT_SHARE_API_BASE_URL = 'http://127.0.0.1:8787';
-export const DEFAULT_SHARE_APP_BASE_URL = 'http://127.0.0.1:8787';
+export const DEFAULT_SHARE_API_BASE_URL = 'https://fgc-todo-sharing.nextround.workers.dev';
+export const DEFAULT_SHARE_APP_BASE_URL = 'https://fgc-todo-sharing.nextround.workers.dev';
 
 function trimTrailingSlash(value) {
   return value.endsWith('/') ? value.slice(0, -1) : value;
 }
 
+function normalizeConfiguredUrl(value) {
+  if (typeof value !== 'string') return '';
+  return value.trim();
+}
+
+function resolveBuildEnv(globalLike = globalThis) {
+  const processEnv = globalLike?.process?.env;
+  const importMetaEnv = import.meta?.env;
+  return {
+    VITE_API_BASE_URL: normalizeConfiguredUrl(importMetaEnv?.VITE_API_BASE_URL) || normalizeConfiguredUrl(processEnv?.VITE_API_BASE_URL),
+    API_BASE_URL: normalizeConfiguredUrl(importMetaEnv?.API_BASE_URL) || normalizeConfiguredUrl(processEnv?.API_BASE_URL),
+    VITE_SHARE_API_BASE_URL: normalizeConfiguredUrl(importMetaEnv?.VITE_SHARE_API_BASE_URL) || normalizeConfiguredUrl(processEnv?.VITE_SHARE_API_BASE_URL),
+    SHARE_API_BASE_URL: normalizeConfiguredUrl(processEnv?.SHARE_API_BASE_URL),
+    VITE_SHARE_APP_BASE_URL: normalizeConfiguredUrl(importMetaEnv?.VITE_SHARE_APP_BASE_URL) || normalizeConfiguredUrl(processEnv?.VITE_SHARE_APP_BASE_URL),
+    SHARE_APP_BASE_URL: normalizeConfiguredUrl(processEnv?.SHARE_APP_BASE_URL),
+  };
+}
+
 export function resolveShareApiBaseUrl(globalLike = globalThis) {
-  const raw = typeof globalLike?.SHARE_API_BASE_URL === 'string'
-    ? globalLike.SHARE_API_BASE_URL
-    : '';
-  const normalized = raw.trim();
+  const runtimeValue = normalizeConfiguredUrl(globalLike?.__APP_CONFIG__?.API_BASE_URL);
+  if (runtimeValue) return trimTrailingSlash(runtimeValue);
+
+  const env = resolveBuildEnv(globalLike);
+  const legacyGlobalValue = normalizeConfiguredUrl(globalLike?.SHARE_API_BASE_URL);
+  const normalized = env.VITE_API_BASE_URL
+    || env.API_BASE_URL
+    || env.VITE_SHARE_API_BASE_URL
+    || env.SHARE_API_BASE_URL
+    || legacyGlobalValue;
   if (!normalized) return DEFAULT_SHARE_API_BASE_URL;
   return trimTrailingSlash(normalized);
 }
 
 export function resolveShareAppBaseUrl(globalLike = globalThis) {
-  const raw = typeof globalLike?.SHARE_APP_BASE_URL === 'string'
-    ? globalLike.SHARE_APP_BASE_URL
-    : '';
-  const normalized = raw.trim();
+  const runtimeValue = normalizeConfiguredUrl(globalLike?.__APP_CONFIG__?.SHARE_APP_BASE_URL);
+  if (runtimeValue) return trimTrailingSlash(runtimeValue);
+
+  const env = resolveBuildEnv(globalLike);
+  const legacyGlobalValue = normalizeConfiguredUrl(globalLike?.SHARE_APP_BASE_URL);
+  const normalized = env.VITE_SHARE_APP_BASE_URL
+    || env.SHARE_APP_BASE_URL
+    || env.VITE_API_BASE_URL
+    || env.API_BASE_URL
+    || legacyGlobalValue;
   if (!normalized) return DEFAULT_SHARE_APP_BASE_URL;
   return trimTrailingSlash(normalized);
 }

@@ -25,7 +25,23 @@ const baseState = {
 
 test('resolveShareApiBaseUrl uses default when global variable is missing', () => {
   const url = resolveShareApiBaseUrl({});
-  assert.equal(url, 'http://127.0.0.1:8787');
+  assert.equal(url, 'https://fgc-todo-sharing.nextround.workers.dev');
+});
+
+test('resolveShareApiBaseUrl prioritizes window.__APP_CONFIG__.API_BASE_URL', () => {
+  const url = resolveShareApiBaseUrl({
+    __APP_CONFIG__: { API_BASE_URL: 'https://runtime-config.example.com/' },
+    SHARE_API_BASE_URL: 'https://legacy-global.example.com',
+    process: { env: { VITE_API_BASE_URL: 'https://env.example.com' } },
+  });
+  assert.equal(url, 'https://runtime-config.example.com');
+});
+
+test('resolveShareApiBaseUrl falls back to VITE_API_BASE_URL when runtime config is missing', () => {
+  const url = resolveShareApiBaseUrl({
+    process: { env: { VITE_API_BASE_URL: 'https://env.example.com/' } },
+  });
+  assert.equal(url, 'https://env.example.com');
 });
 
 test('resolveShareApiBaseUrl trims trailing slash', () => {
@@ -35,7 +51,7 @@ test('resolveShareApiBaseUrl trims trailing slash', () => {
 
 test('resolveShareAppBaseUrl uses default when global variable is missing', () => {
   const url = resolveShareAppBaseUrl({});
-  assert.equal(url, 'http://127.0.0.1:8787');
+  assert.equal(url, 'https://fgc-todo-sharing.nextround.workers.dev');
 });
 
 test('buildSharePublishUrl includes title, payload_json and return_to query', () => {
