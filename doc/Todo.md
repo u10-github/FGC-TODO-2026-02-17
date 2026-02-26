@@ -27,6 +27,8 @@
 - REQ-UC12: タスクリスト削除（確認あり、最後の1件は不可）
 - REQ-PERSIST-01: localStorage保持（リロード後も維持）
 - REQ-EX-01: localStorage破損時にフォールバック+警告
+- REQ-SHARE-CONFIG-01: 共有APIのベースURLは `window.__APP_CONFIG__.API_BASE_URL` を最優先し、環境変数経由を次点として解決できる
+- REQ-SHARE-CONFIG-02: 本番公開時は Cloudflare Workers 本番URL を使用し、ローカルIP依存を持ち込まない
 
 ## 実装タスク
 - [x] IMP-CORE-01 (`REQ-UC1`,`REQ-UC2`,`REQ-UC3`,`REQ-UC4`,`REQ-UC5`)
@@ -53,6 +55,10 @@
   - タスクリスト行の `...` メニュー（名前変更/削除）を実装
 - [x] IMP-STYLE-01
   - `style.css` で最小可読性を担保
+- [x] IMP-SHARE-CONFIG-01 (`REQ-SHARE-CONFIG-01`,`REQ-SHARE-CONFIG-02`)
+  - `src/ui/share-utils.js` と `index.html` でランタイム設定優先のURL解決へ更新
+- [x] IMP-DEPLOY-01 (`REQ-SHARE-CONFIG-02`)
+  - `.github/workflows/deploy-pages.yml` を追加し、本番 `API_BASE_URL` を注入
 
 ## テストタスク（TDDトレース）
 - [x] TEST-UC1-01 (`REQ-UC1`) `tests/tasks.test.js`
@@ -68,6 +74,7 @@
 - [x] TEST-UC11-01 (`REQ-UC11`) `tests/lists.test.js`, `tests/e2e/todo-ui.spec.js`
 - [x] TEST-UC12-01 (`REQ-UC12`) `tests/lists.test.js`, `tests/e2e/todo-ui.spec.js`
 - [x] TEST-PERSIST-01 (`REQ-PERSIST-01`,`REQ-EX-01`) `tests/store.test.js`
+- [x] TEST-SHARE-CONFIG-01 (`REQ-SHARE-CONFIG-01`,`REQ-SHARE-CONFIG-02`) `tests/share-utils.test.js`, `tests/share-api.test.js`
 
 ## トレーサビリティ表
 | Requirement | Implementation | Test |
@@ -86,3 +93,5 @@
 | REQ-UC12 | IMP-CORE-03, IMP-UI-05 | TEST-UC12-01 |
 | REQ-PERSIST-01 | IMP-STORE-01, IMP-UI-01 | TEST-PERSIST-01 |
 | REQ-EX-01 | IMP-STORE-01 | TEST-PERSIST-01 |
+| REQ-SHARE-CONFIG-01 | IMP-SHARE-CONFIG-01 | TEST-SHARE-CONFIG-01 |
+| REQ-SHARE-CONFIG-02 | IMP-SHARE-CONFIG-01, IMP-DEPLOY-01 | TEST-SHARE-CONFIG-01 |

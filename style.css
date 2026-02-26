@@ -66,6 +66,12 @@ body {
   border: 1px solid transparent;
 }
 
+.menu-divider {
+  height: 1px;
+  background: #293244;
+  margin: 0.2rem 0;
+}
+
 .tabs {
   display: flex;
   align-items: center;
@@ -395,6 +401,51 @@ input:focus-visible {
   box-shadow: 0 20px 32px rgba(0, 0, 0, 0.45);
 }
 
+.share-sheet {
+  width: min(94vw, 560px);
+  gap: 0.8rem;
+  overflow-y: auto;
+}
+
+.share-section {
+  border: 1px solid #293244;
+  border-radius: 12px;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.share-section h3 {
+  margin: 0;
+}
+
+.share-section select,
+.share-section textarea,
+.share-section input {
+  width: 100%;
+  background: #0b1220;
+  color: #e5e7eb;
+  border: 1px solid #3f4a60;
+  border-radius: 10px;
+  padding: 0.55rem 0.6rem;
+}
+
+.share-section textarea {
+  resize: vertical;
+}
+
+.share-catalog-note {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+}
+
+.share-created-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+}
+
 .list-sheet-header {
   display: flex;
   align-items: center;
@@ -618,6 +669,11 @@ input:focus-visible {
   .selection-action-buttons {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .share-sheet {
+    width: min(96vw, 560px);
+    max-height: 90dvh;
   }
 }
 

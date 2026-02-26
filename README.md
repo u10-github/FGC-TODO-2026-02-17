@@ -1,6 +1,21 @@
-# FGC TODO (格闘ゲーム用タスク管理ツール)
+# NextRound Tasks
 
-格闘ゲームの練習タスクを、リスト単位で管理するブラウザアプリです。
+`NextRound` ブランドの「1日ひとつ強くなる」を担う、格闘ゲーム向け練習タスク管理アプリです。
+
+## ブランドコンセプト
+
+- 親ブランド: `NextRound`
+- コンセプト: 格闘ゲームを続けるための基盤
+- 目的:
+  - 「情報がなくて止めた」を減らす
+  - 「強くなれなくて止めた」を減らす
+  - 結果として「格闘ゲームをやめないでほしい」
+- 本アプリ: `NextRound Tasks`
+  - 役割: 1日ひとつ強くなる（小さく積み上げて継続を支える）
+  - 世界観コピー: 「少しずつ強くなっていく。それがいいんだ。」
+- 関連アプリ: `NextRound Combos`
+  - 役割: 情報を伝えあう（コンボ等のレシピ共有・発見・取り込みを促す）
+  - 世界観コピー: 「もっと強くなれる。俺も、お前も。」
 
 - タスクの追加 / 完了 / 復活 / 削除
 - 成功回数カウント（+1）とリセット
@@ -18,6 +33,26 @@
   - Unit: Node.js built-in test runner
   - E2E: Playwright
 - 配置: 静的ファイル構成（GitHub Pages 配置を想定）
+
+## API接続設定
+
+`NextRound Combos` 連携先URLは次の優先順位で解決します。
+
+1. `window.__APP_CONFIG__.API_BASE_URL`
+2. ビルド時環境変数（`VITE_API_BASE_URL` / `API_BASE_URL`）
+3. フォールバック: `https://fgc-todo-sharing.nextround.workers.dev`
+
+`window.__APP_CONFIG__` は `index.html` で `app-config.js` を先に読み込むことで設定できます。
+
+- 本番（GitHub Pages）: `.github/workflows/deploy-pages.yml` が `API_BASE_URL` / `SHARE_APP_BASE_URL` を本番URLで注入
+- 開発（ローカル）: `app-config.js` を一時的に次のように上書きすればローカルAPIを利用可能
+
+```js
+window.__APP_CONFIG__ = {
+  API_BASE_URL: "http://127.0.0.1:8787",
+  SHARE_APP_BASE_URL: "http://127.0.0.1:8787"
+};
+```
 
 ## セットアップ
 

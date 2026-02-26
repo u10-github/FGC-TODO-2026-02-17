@@ -283,6 +283,33 @@ test('footer links can reach terms/privacy and each page is directly accessible'
   await expect(page.getByText('個人情報・機密情報は入力しないでください。')).toBeVisible();
 });
 
+test('menu separates public operations and keeps local editing when offline', async ({ page, context }) => {
+  await context.setOffline(true);
+  await page.goto('/index.html');
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await expect(page.getByRole('menuitem', { name: /このタスクリストを公開/ })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /タスクリストを検索/ })).toBeVisible();
+
+  const beforeUrl = page.url();
+  await page.getByRole('menuitem', { name: /このタスクリストを公開/ }).click();
+  await expect(page).toHaveURL(beforeUrl);
+  await expect(page.locator('#live-region')).toContainText('オフラインのため共有アプリへ遷移できません。ローカル編集は継続できます。');
+
+  await addTask(page, 'offline-local-task');
+  await expect(page.locator('#active-list .task-item', { hasText: 'offline-local-task' })).toHaveCount(1);
+});
+
+test('shows import success dialog on return from sharing app', async ({ page }) => {
+  page.once('dialog', (dialog) => {
+    expect(dialog.message()).toBe('タスクリストをインポートしました');
+    dialog.accept();
+  });
+
+  await page.goto('/index.html?imported=1');
+  await expect(page).toHaveURL(/\/index\.html$/);
+});
+
 test('active tasks can be reordered only in reorder mode and persist after reload', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
 
@@ -361,17 +388,28 @@ test('selection mode can move and copy tasks to another list', async ({ page }) 
 
   await page.getByRole('button', { name: 'タスク選択' }).click();
   await page.locator('#active-list .task-item').nth(0).locator('input[data-action="toggle-select"]').check();
-  await page.getByRole('button', { name: '移動' }).click();
+  await page.getByRole('button', { name: '移動', exact: true }).click();
   await page.locator('#bulk-destination-list .list-item-btn', { hasText: listB }).click();
 
   await expect(page.locator('#active-list .task-item')).toHaveCount(1);
 
   await page.getByRole('button', { name: 'タスク選択' }).click();
   await page.locator('#active-list .task-item').nth(0).locator('input[data-action="toggle-select"]').check();
-  await page.getByRole('button', { name: 'コピー' }).click();
+  await page.getByRole('button', { name: 'コピー', exact: true }).click();
   await page.locator('#bulk-destination-list .list-item-btn', { hasText: listB }).click();
 
   await openListSheet(page);
   await page.getByRole('button', { name: listB, exact: true }).click();
   await expect(page.locator('#active-list .task-item')).toHaveCount(2);
+});
+
+test('public actions navigate to sharing app with return_to', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.SHARE_APP_BASE_URL = 'https://sharing.example.com';
+  });
+  await page.goto('/index.html');
+
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await page.getByRole('menuitem', { name: 'タスクリストを検索（NextRound Combosに移動）' }).click();
+  await expect(page).toHaveURL(/https:\/\/sharing\.example\.com\/search\?return_to=/);
 });

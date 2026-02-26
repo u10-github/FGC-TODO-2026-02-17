@@ -1,6 +1,9 @@
-# runbook: FGC-TODO-2026-02-17
+# runbook: NextRound Tasks
 
 ## サービス概要
+- サービス名: `NextRound Tasks`
+- 親ブランド: `NextRound`
+- 関連アプリ: `NextRound Combos`
 - デプロイ: GitHub Pages（`main` ブランチ）
 - 本番URL: `https://u10-github.github.io/FGC-TODO-2026-02-17/`
 - 法務ページ:

@@ -14,6 +14,9 @@
         <div id="menu-popover" class="menu-popover is-hidden" role="menu" aria-label="データ管理メニュー">
           <button id="export-btn" class="menu-item-btn" type="button" role="menuitem">データをエクスポート</button>
           <button id="import-btn" class="menu-item-btn" type="button" role="menuitem">データをインポート</button>
+          <div class="menu-divider" role="separator" aria-hidden="true"></div>
+          <button id="share-publish-btn" class="menu-item-btn" type="button" role="menuitem">このタスクリストを公開（NextRound Combosに移動）</button>
+          <button id="share-search-btn" class="menu-item-btn" type="button" role="menuitem">タスクリストを検索（NextRound Combosに移動）</button>
         </div>
       </header>
 
@@ -130,6 +133,7 @@
     <p id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></p>
     <input id="import-file-input" type="file" accept="application/json,.json" class="sr-only" />
 
+    <script src="./app-config.js"></script>
     <script type="module" src="./src/ui/app.js"></script>
   </body>
 </html>

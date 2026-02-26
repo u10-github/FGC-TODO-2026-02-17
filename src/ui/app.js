@@ -12,12 +12,20 @@ import {
 } from '../core/tasks.js';
 import { deleteList, renameList } from '../core/lists.js';
 import { exportStateData, importStateData, loadState, mergeImportedState, saveState } from '../core/store.js';
+import {
+  buildSharePublishUrl,
+  buildShareSearchUrl,
+  resolveShareAppBaseUrl,
+  shouldShowImportSuccess,
+} from './share-utils.js';
 
 const els = {
   menuBtn: document.getElementById('menu-btn'),
   menuPopover: document.getElementById('menu-popover'),
   exportBtn: document.getElementById('export-btn'),
   importBtn: document.getElementById('import-btn'),
+  sharePublishBtn: document.getElementById('share-publish-btn'),
+  shareSearchBtn: document.getElementById('share-search-btn'),
   importFileInput: document.getElementById('import-file-input'),
   listSwitchBtn: document.getElementById('list-switch-btn'),
   tabActive: document.getElementById('tab-active'),
@@ -60,6 +68,7 @@ let state = loadState({ storage: window.localStorage });
 let currentTab = 'active';
 let toastTimer = null;
 let listMenuId = null;
+const shareAppBaseUrl = resolveShareAppBaseUrl(globalThis);
 const expandedTaskIds = new Set();
 let reorderState = null;
 let isReorderMode = false;
@@ -81,6 +90,19 @@ function commit(nextState) {
   render();
 }
 
+function mapErrorMessage(error, fallback) {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+function setSelectOptions(selectElement, options, placeholder) {
+  const content = [`<option value="">${placeholder}</option>`];
+  options.forEach((option) => {
+    content.push(`<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`);
+  });
+  selectElement.innerHTML = content.join('');
+}
+
 function cancelReorderInteraction() {
   reorderState = null;
   clearReorderStyles();
@@ -97,7 +119,10 @@ function closeBulkSheet() {
   els.bulkSheet.classList.add('is-hidden');
   els.bulkDestinationList.innerHTML = '';
   els.bulkSheetDescription.textContent = '';
-  if (els.sheet.classList.contains('is-hidden') && els.listSheet.classList.contains('is-hidden')) {
+  if (
+    els.sheet.classList.contains('is-hidden') &&
+    els.listSheet.classList.contains('is-hidden')
+  ) {
     els.backdrop.classList.add('is-hidden');
   }
 }
@@ -428,6 +453,46 @@ function showListSheet() {
   els.listInput.focus();
 }
 
+function buildCurrentListPayloadJson() {
+  const currentList = getCurrentList();
+  if (!currentList) throw new Error('current list was not found');
+  const payload = {
+    schemaVersion: 2,
+    currentListId: currentList.id,
+    lists: [currentList],
+    tasks: state.tasks.filter((task) => task.listId === currentList.id),
+  };
+  return JSON.stringify(payload);
+}
+
+function ensureOnlineForExternalNavigation() {
+  if (navigator.onLine) return true;
+  announce('オフラインのため共有アプリへ遷移できません。ローカル編集は継続できます。');
+  return false;
+}
+
+function openSharePublish() {
+  showMenu(false);
+  if (!ensureOnlineForExternalNavigation()) return;
+  const currentList = getCurrentList();
+  const returnTo = `${window.location.origin}${window.location.pathname}`;
+  const url = buildSharePublishUrl({
+    shareAppBaseUrl,
+    title: currentList?.name ?? 'タスクリスト',
+    payloadJson: buildCurrentListPayloadJson(),
+    returnTo,
+  });
+  window.location.assign(url);
+}
+
+function openShareSearch() {
+  showMenu(false);
+  if (!ensureOnlineForExternalNavigation()) return;
+  const returnTo = `${window.location.origin}${window.location.pathname}`;
+  const url = buildShareSearchUrl({ shareAppBaseUrl, returnTo });
+  window.location.assign(url);
+}
+
 function showListError(show, message) {
   els.listError.classList.toggle('is-hidden', !show);
   if (show) {
@@ -522,7 +587,7 @@ function showUndoToast(taskId, title, { withUndo = true } = {}) {
 }
 
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -578,6 +643,8 @@ els.menuBtn.addEventListener('click', () => {
 });
 els.exportBtn.addEventListener('click', exportBackup);
 els.importBtn.addEventListener('click', triggerImport);
+els.sharePublishBtn?.addEventListener('click', openSharePublish);
+els.shareSearchBtn?.addEventListener('click', openShareSearch);
 els.importFileInput.addEventListener('change', (event) => {
   const file = event.target.files?.[0];
   handleImportFile(file);
@@ -694,7 +761,11 @@ document.addEventListener('pointercancel', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !els.listSheet.classList.contains('is-hidden')) {
+  if (
+    event.key === 'Escape' &&
+    (!els.listSheet.classList.contains('is-hidden') ||
+      !els.bulkSheet.classList.contains('is-hidden'))
+  ) {
     hideSheet();
   }
 });
@@ -813,5 +884,11 @@ document.body.addEventListener('click', (event) => {
     announce(`「${task.title}」を削除しました。`);
   }
 });
+
+if (shouldShowImportSuccess(window.location.search)) {
+  window.alert('タスクリストをインポートしました');
+  const clearedUrl = `${window.location.origin}${window.location.pathname}`;
+  window.history.replaceState({}, '', clearedUrl);
+}
 
 render();
