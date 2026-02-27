@@ -14,8 +14,8 @@ const baseState = {
   schemaVersion: 2,
   currentListId: 'l1',
   lists: [
-    { id: 'l1', name: 'Ryu Plan', createdAt: 10 },
-    { id: 'l2', name: 'Ken Plan', createdAt: 20 },
+    { id: 'l1', name: 'Ryu Plan', description: 'Ryu list desc', createdAt: 10 },
+    { id: 'l2', name: 'Ken Plan', description: 'Ken list desc', createdAt: 20 },
   ],
   tasks: [
     { id: 't1', title: 'A', status: 'active', count: 2, listId: 'l1' },
@@ -60,11 +60,12 @@ test('buildSharePublishUrl includes title, payload_json and return_to query', ()
     shareAppBaseUrl: 'https://sharing.example.com',
     title: 'Ryu Public',
     payloadJson: '{"foo":1}',
+    description: 'list description',
     returnTo: 'https://todo.example.com/index.html?from=share',
   });
   assert.equal(
     url,
-    'https://sharing.example.com/ui/publish?title=Ryu+Public&payload_json=%7B%22foo%22%3A1%7D&return_to=https%3A%2F%2Ftodo.example.com%2Findex.html%3Ffrom%3Dshare',
+    'https://sharing.example.com/ui/publish?title=Ryu+Public&payload_json=%7B%22foo%22%3A1%7D&description=list+description&return_to=https%3A%2F%2Ftodo.example.com%2Findex.html%3Ffrom%3Dshare',
   );
 });
 
@@ -111,6 +112,7 @@ test('buildSharePayload exports only selected list tasks', () => {
   const parsed = JSON.parse(payload.payload_json);
   assert.equal(parsed.lists.length, 1);
   assert.equal(parsed.lists[0].name, 'Ryu Public');
+  assert.equal(parsed.lists[0].description, 'Ryu list desc');
   assert.equal(parsed.tasks.length, 2);
   assert.equal(parsed.tasks.every((task) => task.listId === parsed.currentListId), true);
 });

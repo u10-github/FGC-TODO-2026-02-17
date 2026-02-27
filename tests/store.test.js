@@ -40,6 +40,7 @@ test('loadState migrates schemaVersion=1 data into default task list', () => {
   assert.equal(state.schemaVersion, 2);
   assert.equal(state.lists.length, 1);
   assert.equal(state.currentListId, state.lists[0].id);
+  assert.equal(state.lists[0].description, '');
   assert.equal(state.tasks.length, 1);
   assert.equal(state.tasks[0].listId, state.currentListId);
 });
@@ -60,7 +61,7 @@ test('saveState writes schemaVersion=2 payload including list data', () => {
   const state = {
     schemaVersion: 2,
     currentListId: 'l1',
-    lists: [{ id: 'l1', name: 'タスクリスト', createdAt: 1 }],
+    lists: [{ id: 'l1', name: 'タスクリスト', description: 'リスト説明', createdAt: 1 }],
     tasks: [{ id: '1', title: 'A', status: 'active', count: 1, listId: 'l1' }],
   };
   saveState(state, { storage });
@@ -69,6 +70,7 @@ test('saveState writes schemaVersion=2 payload including list data', () => {
   assert.equal(stored.schemaVersion, 2);
   assert.equal(stored.currentListId, 'l1');
   assert.equal(stored.lists.length, 1);
+  assert.equal(stored.lists[0].description, 'リスト説明');
   assert.equal(stored.tasks.length, 1);
   assert.equal(stored.tasks[0].listId, 'l1');
 });
@@ -93,13 +95,14 @@ test('importStateData accepts v2 backup payload', () => {
   const raw = JSON.stringify({
     schemaVersion: 2,
     currentListId: 'l1',
-    lists: [{ id: 'l1', name: 'A', createdAt: 1 }],
+    lists: [{ id: 'l1', name: 'A', description: 'list-desc', createdAt: 1 }],
     tasks: [{ id: 't1', title: 'Task', status: 'active', count: 0, listId: 'l1' }],
   });
 
   const state = importStateData(raw);
   assert.equal(state.schemaVersion, 2);
   assert.equal(state.currentListId, 'l1');
+  assert.equal(state.lists[0].description, 'list-desc');
   assert.equal(state.tasks[0].listId, 'l1');
 });
 
@@ -112,6 +115,7 @@ test('importStateData migrates v1 payload to v2', () => {
   const state = importStateData(raw);
   assert.equal(state.schemaVersion, 2);
   assert.equal(state.lists.length, 1);
+  assert.equal(state.lists[0].description, '');
   assert.equal(state.tasks[0].listId, state.currentListId);
 });
 
@@ -123,19 +127,20 @@ test('mergeImportedState appends lists and renames duplicated names', () => {
   const currentState = {
     schemaVersion: 2,
     currentListId: 'default-list',
-    lists: [{ id: 'default-list', name: 'タスクリスト', createdAt: 0 }],
+    lists: [{ id: 'default-list', name: 'タスクリスト', description: '既存説明', createdAt: 0 }],
     tasks: [{ id: 'c1', title: '既存', status: 'active', count: 0, listId: 'default-list' }],
   };
   const importedState = {
     schemaVersion: 2,
     currentListId: 'l1',
-    lists: [{ id: 'l1', name: 'タスクリスト', createdAt: 10 }],
+    lists: [{ id: 'l1', name: 'タスクリスト', description: '持ち込む説明', createdAt: 10 }],
     tasks: [{ id: 'i1', title: '追加', status: 'active', count: 0, listId: 'l1' }],
   };
 
   const merged = mergeImportedState(currentState, importedState);
   assert.equal(merged.lists.length, 2);
   assert.equal(merged.lists[1].name, 'タスクリスト(1)');
+  assert.equal(merged.lists[1].description, '持ち込む説明');
   assert.equal(merged.tasks.length, 2);
   assert.equal(merged.tasks[1].title, '追加');
   assert.equal(merged.tasks[1].listId, merged.lists[1].id);

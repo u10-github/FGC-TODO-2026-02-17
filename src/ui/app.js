@@ -53,6 +53,8 @@ const els = {
   listInput: document.getElementById('list-name-input'),
   listCreateBtn: document.getElementById('list-create-btn'),
   listError: document.getElementById('list-error'),
+  listDescriptionEditor: document.getElementById('list-description-editor'),
+  listDescriptionSaveBtn: document.getElementById('list-description-save-btn'),
   listItems: document.getElementById('list-items'),
   listSheetClose: document.getElementById('list-sheet-close'),
   bulkSheet: document.getElementById('bulk-sheet'),
@@ -96,6 +98,11 @@ function commit(nextState) {
 function mapErrorMessage(error, fallback) {
   if (error instanceof Error && error.message) return error.message;
   return fallback;
+}
+
+function normalizeOptionalText(value) {
+  if (typeof value !== 'string') return '';
+  return value.trim();
 }
 
 function setSelectOptions(selectElement, options, placeholder) {
@@ -263,6 +270,7 @@ function render() {
   els.activeList.innerHTML = activeTasks.map((task) => renderTask(task, false)).join('');
   els.doneList.innerHTML = doneTasks.map((task) => renderTask(task, true)).join('');
   els.listSwitchBtn.textContent = currentList.name;
+  els.listDescriptionEditor.value = typeof currentList.description === 'string' ? currentList.description : '';
   els.listItems.innerHTML = state.lists
     .map(
       (list) => {
@@ -482,6 +490,7 @@ function openSharePublish() {
   const url = buildSharePublishUrl({
     shareAppBaseUrl,
     title: currentList?.name ?? 'タスクリスト',
+    description: typeof currentList?.description === 'string' ? currentList.description : '',
     payloadJson: buildCurrentListPayloadJson(),
     returnTo,
   });
@@ -519,6 +528,7 @@ function createTaskList() {
   const list = {
     id: createListId(),
     name: normalizedName,
+    description: '',
     createdAt: Date.now(),
   };
 
@@ -673,6 +683,21 @@ els.listSheetClose?.addEventListener('click', hideSheet);
 els.bulkSheetClose?.addEventListener('click', hideSheet);
 els.listInput.addEventListener('input', () => {
   if (els.listInput.value.trim()) showListError(false, '');
+});
+els.listDescriptionSaveBtn?.addEventListener('click', () => {
+  const currentList = getCurrentList();
+  if (!currentList) return;
+
+  const normalizedDescription = normalizeOptionalText(els.listDescriptionEditor.value);
+  commit({
+    ...state,
+    lists: state.lists.map((list) => (
+      list.id === currentList.id
+        ? { ...list, description: normalizedDescription }
+        : list
+    )),
+  });
+  announce('リスト説明を保存しました。');
 });
 els.listItems.addEventListener('click', (event) => {
   event.stopPropagation();

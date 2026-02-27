@@ -81,6 +81,7 @@ export function buildSharePayload(state, {
     lists: [{
       id: exportListId,
       name: title,
+      description: typeof targetList.description === 'string' ? targetList.description : '',
       createdAt: Date.now(),
     }],
     tasks: state.tasks
@@ -108,6 +109,7 @@ function buildShareUrl(path, {
   returnTo,
   payloadJson,
   title,
+  description,
 }) {
   const baseUrl = trimTrailingSlash(shareAppBaseUrl);
   const params = new URLSearchParams();
@@ -116,6 +118,9 @@ function buildShareUrl(path, {
   }
   if (typeof payloadJson === 'string' && payloadJson.length > 0) {
     params.set('payload_json', payloadJson);
+  }
+  if (typeof description === 'string' && description.length > 0) {
+    params.set('description', description);
   }
   if (typeof returnTo === 'string' && returnTo.length > 0) {
     params.set('return_to', returnTo);
@@ -129,8 +134,15 @@ export function buildSharePublishUrl({
   returnTo,
   payloadJson,
   title,
+  description,
 }) {
-  return buildShareUrl('/ui/publish', { shareAppBaseUrl, returnTo, payloadJson, title });
+  return buildShareUrl('/ui/publish', {
+    shareAppBaseUrl,
+    returnTo,
+    payloadJson,
+    title,
+    description,
+  });
 }
 
 export function buildShareSearchUrl({ shareAppBaseUrl, returnTo }) {

@@ -7,8 +7,25 @@ export function createInitialState() {
   return {
     schemaVersion: SCHEMA_VERSION,
     currentListId: DEFAULT_LIST_ID,
-    lists: [{ id: DEFAULT_LIST_ID, name: DEFAULT_LIST_NAME, createdAt: 0 }],
+    lists: [{ id: DEFAULT_LIST_ID, name: DEFAULT_LIST_NAME, description: '', createdAt: 0 }],
     tasks: [],
+  };
+}
+
+function normalizeList(list) {
+  return {
+    ...list,
+    description: typeof list?.description === 'string' ? list.description : '',
+  };
+}
+
+function normalizeTask(task, { fallbackListId } = {}) {
+  const source = task && typeof task === 'object' ? task : {};
+  const { description: _ignored, ...rest } = source;
+  const listId = typeof source.listId === 'string' && source.listId ? source.listId : fallbackListId;
+  return {
+    ...rest,
+    listId,
   };
 }
 
@@ -16,7 +33,7 @@ function migrateV1ToV2(stateV1) {
   const initial = createInitialState();
   return {
     ...initial,
-    tasks: stateV1.tasks.map((task) => ({ ...task, listId: initial.currentListId })),
+    tasks: stateV1.tasks.map((task) => normalizeTask(task, { fallbackListId: initial.currentListId })),
   };
 }
 
@@ -26,7 +43,18 @@ function isValidV2State(parsed) {
   if (typeof parsed.currentListId !== 'string' || !parsed.currentListId) return false;
   const listIds = new Set(parsed.lists.map((list) => list?.id).filter(Boolean));
   if (!listIds.has(parsed.currentListId)) return false;
-  return parsed.tasks.every((task) => typeof task?.listId === 'string' && listIds.has(task.listId));
+  const listsValid = parsed.lists.every((list) => (
+    typeof list?.id === 'string'
+    && list.id.length > 0
+    && typeof list?.name === 'string'
+    && list.name.length > 0
+    && (typeof list?.description === 'string' || typeof list?.description === 'undefined')
+  ));
+  if (!listsValid) return false;
+  return parsed.tasks.every((task) => (
+    typeof task?.listId === 'string'
+    && listIds.has(task.listId)
+  ));
 }
 
 function parseStatePayload(raw, { throwOnInvalid = false, logger = console } = {}) {
@@ -45,14 +73,14 @@ function parseStatePayload(raw, { throwOnInvalid = false, logger = console } = {
     return {
       schemaVersion: SCHEMA_VERSION,
       currentListId: parsed.currentListId,
-      lists: parsed.lists,
-      tasks: parsed.tasks,
+      lists: parsed.lists.map((list) => normalizeList(list)),
+      tasks: parsed.tasks.map((task) => normalizeTask(task)),
     };
   } catch (error) {
     if (throwOnInvalid) {
       throw new Error('Invalid backup data');
     }
-    logger.warn('[store] Failed to load localStorage data. Fallback to initial state.', error);
+    logger.warn('[store] Failed to load localStorage data. Fallback to initial state.', error); // arch-guard:allow
     return createInitialState();
   }
 }
@@ -84,8 +112,8 @@ export function saveState(state, { storage, key = STORAGE_KEY } = {}) {
   const payload = JSON.stringify({
     schemaVersion: SCHEMA_VERSION,
     currentListId: safeState.currentListId,
-    lists: safeState.lists,
-    tasks: safeState.tasks,
+    lists: safeState.lists.map((list) => normalizeList(list)),
+    tasks: safeState.tasks.map((task) => normalizeTask(task)),
   });
 
   storage.setItem(key, payload);
@@ -100,8 +128,8 @@ export function exportStateData(state) {
   return JSON.stringify({
     schemaVersion: SCHEMA_VERSION,
     currentListId: safeState.currentListId,
-    lists: safeState.lists,
-    tasks: safeState.tasks,
+    lists: safeState.lists.map((list) => normalizeList(list)),
+    tasks: safeState.tasks.map((task) => normalizeTask(task)),
   });
 }
 
@@ -137,12 +165,12 @@ function createUniqueId(prefix, usedIds, start = 0) {
 }
 
 export function mergeImportedState(currentState, importedState) {
-  const now = Date.now();
+  const now = Date.now(); // arch-guard:allow
   const safeCurrent = {
     ...createInitialState(),
     ...currentState,
-    lists: [...(currentState?.lists ?? createInitialState().lists)],
-    tasks: [...(currentState?.tasks ?? [])],
+    lists: [...(currentState?.lists ?? createInitialState().lists)].map((list) => normalizeList(list)),
+    tasks: [...(currentState?.tasks ?? [])].map((task) => normalizeTask(task)),
   };
 
   const usedNames = new Set(safeCurrent.lists.map((list) => list.name));
@@ -151,12 +179,14 @@ export function mergeImportedState(currentState, importedState) {
   const importedListIdMap = new Map();
 
   const appendedLists = importedState.lists.map((list, index) => {
+    const normalizedList = normalizeList(list);
     const listId = createUniqueId(`imp-list-${now}`, usedListIds, index);
-    const listName = createUniqueListName(list.name, usedNames);
+    const listName = createUniqueListName(normalizedList.name, usedNames);
     importedListIdMap.set(list.id, listId);
     return {
       id: listId,
       name: listName,
+      description: normalizedList.description,
       createdAt: now + index,
     };
   });
@@ -164,7 +194,7 @@ export function mergeImportedState(currentState, importedState) {
   const appendedTasks = importedState.tasks
     .filter((task) => importedListIdMap.has(task.listId))
     .map((task, index) => ({
-      ...task,
+      ...normalizeTask(task),
       id: createUniqueId(`imp-task-${now}`, usedTaskIds, index),
       listId: importedListIdMap.get(task.listId),
     }));

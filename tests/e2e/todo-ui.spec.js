@@ -17,6 +17,11 @@ async function createTaskList(page, name) {
   await page.getByRole('button', { name: '作成', exact: true }).click();
 }
 
+async function saveListDescription(page, description) {
+  await page.locator('#list-description-editor').fill(description);
+  await page.getByRole('button', { name: '説明を保存', exact: true }).click();
+}
+
 function listRow(page, name) {
   return page.locator('.list-row').filter({ hasText: name });
 }
@@ -58,6 +63,18 @@ test('main task flow works and persists after reload', async ({ page }) => {
   const persistedRow = page.locator('.task-item', { hasText: title });
   await expect(persistedRow).toBeVisible();
   await expect(persistedRow.locator('button[data-action="inc"]')).toHaveText('成功！');
+});
+
+test('list description is shown and persists after reload', async ({ page }) => {
+  const listName = `E2E-LIST-DESC-${Date.now()}`;
+  const listDescription = '端背負い時の練習方針をここにまとめる。';
+
+  await createTaskList(page, listName);
+  await saveListDescription(page, listDescription);
+  await expect(page.locator('#list-description-editor')).toHaveValue(listDescription);
+
+  await page.reload();
+  await expect(page.locator('#list-description-editor')).toHaveValue(listDescription);
 });
 
 test('task lists can be created and switched with isolated tasks', async ({ page }) => {
@@ -107,8 +124,8 @@ test('can import backup data from hamburger menu', async ({ page }) => {
     schemaVersion: 2,
     currentListId: 'l2',
     lists: [
-      { id: 'default-list', name: 'タスクリスト', createdAt: 0 },
-      { id: 'l2', name: 'SF6 / リュウ', createdAt: 1 },
+      { id: 'default-list', name: 'タスクリスト', description: '', createdAt: 0 },
+      { id: 'l2', name: 'SF6 / リュウ', description: 'リスト説明のインポート', createdAt: 1 },
     ],
     tasks: [
       { id: 't1', title: 'インポートされた課題', status: 'active', count: 0, listId: 'l2' },
@@ -126,6 +143,7 @@ test('can import backup data from hamburger menu', async ({ page }) => {
 
   await expect(page.locator('#list-switch-btn')).toHaveText('SF6 / リュウ');
   await expect(page.locator('#active-list .task-item', { hasText: 'インポートされた課題' })).toHaveCount(1);
+  await expect(page.locator('#list-description-editor')).toHaveValue('リスト説明のインポート');
 });
 
 test('import with duplicated list name appends as name(1)', async ({ page }) => {

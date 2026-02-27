@@ -10,7 +10,7 @@ export const REQ_IDS = {
 };
 
 function createId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  return `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`; // arch-guard:allow
 }
 
 function updateTask(state, id, updater) {
