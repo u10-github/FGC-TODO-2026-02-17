@@ -2,14 +2,34 @@ export const STORAGE_KEY = 'fg_task_manager_v1';
 export const SCHEMA_VERSION = 2;
 export const DEFAULT_LIST_ID = 'default-list';
 export const DEFAULT_LIST_NAME = 'タスクリスト';
+export const ONBOARDING_LIST_ID = 'onboarding-list';
+export const ONBOARDING_LIST_NAME = 'タスクリスト';
 
-export function createInitialState() {
+const ONBOARDING_TASK_TITLES = [
+  '右下の＋ボタンでタスクを追加する',
+  '右上の「タスクリスト」を押して新規タスクリストを追加する',
+  '左上の☰メニューから「データをエクスポート」でデータをバックアップする',
+  '左上の☰メニューから「このリストを公開する」で現在のタスクリストを公開する',
+  '左上の☰メニューから「公開リストを探す」で他のタスクリストを検索してインポートする',
+];
+
+function createOnboardingInitialState() {
   return {
     schemaVersion: SCHEMA_VERSION,
-    currentListId: DEFAULT_LIST_ID,
-    lists: [{ id: DEFAULT_LIST_ID, name: DEFAULT_LIST_NAME, description: '', createdAt: 0 }],
-    tasks: [],
+    currentListId: ONBOARDING_LIST_ID,
+    lists: [{ id: ONBOARDING_LIST_ID, name: ONBOARDING_LIST_NAME, description: '最初の操作ガイド', createdAt: 0 }],
+    tasks: ONBOARDING_TASK_TITLES.map((title, index) => ({
+      id: `onboarding-task-${index + 1}`,
+      title,
+      status: 'active',
+      count: 0,
+      listId: ONBOARDING_LIST_ID,
+    })),
   };
+}
+
+export function createInitialState() {
+  return createOnboardingInitialState();
 }
 
 function normalizeList(list) {
@@ -57,6 +77,16 @@ function isValidV2State(parsed) {
   ));
 }
 
+function isLegacyEmptyDefaultState(parsed) {
+  if (!isValidV2State(parsed)) return false;
+  if (parsed.tasks.length > 0) return false;
+  if (parsed.currentListId !== DEFAULT_LIST_ID) return false;
+  if (parsed.lists.length !== 1) return false;
+  const [list] = parsed.lists;
+  if (list?.id !== DEFAULT_LIST_ID) return false;
+  return list?.name === DEFAULT_LIST_NAME;
+}
+
 function parseStatePayload(raw, { throwOnInvalid = false, logger = console } = {}) {
   try {
     const parsed = JSON.parse(raw);
@@ -67,6 +97,10 @@ function parseStatePayload(raw, { throwOnInvalid = false, logger = console } = {
     if (!isValidV2State(parsed)) {
       if (throwOnInvalid) throw new Error('Invalid backup schema');
       logger.warn('[store] Invalid schema. Fallback to initial state.');
+      return createInitialState();
+    }
+
+    if (isLegacyEmptyDefaultState(parsed)) {
       return createInitialState();
     }
 
