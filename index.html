@@ -8,6 +8,11 @@
   </head>
   <body>
     <main class="app">
+      <section class="brand-banner" aria-label="NextRound Tasks">
+        <p class="brand-eyebrow">NextRound</p>
+        <h1 class="brand-title">Tasks</h1>
+      </section>
+
       <header class="app-header">
         <button id="menu-btn" class="menu-btn" type="button" aria-label="メニュー" aria-expanded="false">☰</button>
         <button id="list-switch-btn" class="list-switch-btn" type="button" aria-label="タスクリストを切り替え"></button>
@@ -15,8 +20,9 @@
           <button id="export-btn" class="menu-item-btn" type="button" role="menuitem">データをエクスポート</button>
           <button id="import-btn" class="menu-item-btn" type="button" role="menuitem">データをインポート</button>
           <div class="menu-divider" role="separator" aria-hidden="true"></div>
-          <button id="share-publish-btn" class="menu-item-btn" type="button" role="menuitem">このタスクリストを公開（NextRound Combosに移動）</button>
-          <button id="share-search-btn" class="menu-item-btn" type="button" role="menuitem">タスクリストを検索（NextRound Combosに移動）</button>
+          <p class="menu-section-title" role="presentation">NextRound Combos</p>
+          <button id="share-publish-btn" class="menu-item-btn" type="button" role="menuitem">このリストを公開する</button>
+          <button id="share-search-btn" class="menu-item-btn" type="button" role="menuitem">公開リストを探す</button>
         </div>
       </header>
 
@@ -61,17 +67,21 @@
       </section>
 
       <section id="list-description-panel" class="list-description-panel">
-        <label for="list-description-editor">タスクリスト説明</label>
-        <textarea id="list-description-editor" rows="4" placeholder="このタスクリストの説明を入力"></textarea>
-        <div class="list-description-actions">
-          <button id="list-description-save-btn" class="btn-primary" type="button">説明を保存</button>
-        </div>
+        <details id="list-description-disclosure" class="list-description-disclosure">
+          <summary class="list-description-toggle-btn">タスクリスト説明を開く</summary>
+          <label for="list-description-editor">タスクリスト説明</label>
+          <textarea id="list-description-editor" rows="4" placeholder="このタスクリストの説明を入力"></textarea>
+          <div class="list-description-actions">
+            <button id="list-description-save-btn" class="btn-primary" type="button">説明を保存</button>
+          </div>
+        </details>
       </section>
 
       <footer class="app-footer" role="contentinfo" aria-label="共通フッター">
         <nav class="footer-links" aria-label="法務関連リンク">
           <a href="./terms/">利用規約</a>
-          <a href="./privacy/">データの扱い</a>
+          <a href="./privacy/">プライバシーポリシー</a>
+          <a href="./privacy/#privacy-contact">お問い合わせ</a>
         </nav>
       </footer>
     </main>
