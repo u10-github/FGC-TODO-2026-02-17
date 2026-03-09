@@ -1,5 +1,13 @@
 # 作業ログ
 
+## ARD
+
+### Assumptions
+
+### Risks
+
+### Decisions
+
 ## 2026-02-26 (Brand concept sync)
 - 親ブランドを `NextRound`、本アプリ名を `NextRound Tasks` として要件・文書へ反映。
 - ブランド意図（「格闘ゲームを続けるための基盤」）と2アプリの役割/世界観コピーを `doc/Requirements.md` に最優先方針として追加。

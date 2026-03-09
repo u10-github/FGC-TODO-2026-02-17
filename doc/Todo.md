@@ -1,5 +1,15 @@
 # Todo
 
+## Current Focus（現在作業中）
+
+### Current Task
+
+### Status
+
+### Next Checkpoint
+
+### Active Queue
+
 ## ブランチ運用
 - `develop` で計画・実装・検証を行う。
 - 完了後、`main` に反映する。
