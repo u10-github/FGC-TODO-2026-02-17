@@ -464,18 +464,6 @@ function showListSheet() {
   els.listInput.focus();
 }
 
-function buildCurrentListPayloadJson() {
-  const currentList = getCurrentList();
-  if (!currentList) throw new Error('current list was not found');
-  const payload = {
-    schemaVersion: 2,
-    currentListId: currentList.id,
-    lists: [currentList],
-    tasks: state.tasks.filter((task) => task.listId === currentList.id),
-  };
-  return JSON.stringify(payload);
-}
-
 function ensureOnlineForExternalNavigation() {
   if (navigator.onLine) return true;
   announce('オフラインのため共有アプリへ遷移できません。ローカル編集は継続できます。');
@@ -485,16 +473,9 @@ function ensureOnlineForExternalNavigation() {
 function openSharePublish() {
   showMenu(false);
   if (!ensureOnlineForExternalNavigation()) return;
-  const currentList = getCurrentList();
+  // The Ionic redirect ignores legacy list parameters. Keep the list on the device.
   const returnTo = `${window.location.origin}${window.location.pathname}`;
-  const url = buildSharePublishUrl({
-    shareAppBaseUrl,
-    title: currentList?.name ?? 'タスクリスト',
-    description: typeof currentList?.description === 'string' ? currentList.description : '',
-    payloadJson: buildCurrentListPayloadJson(),
-    returnTo,
-  });
-  window.location.assign(url);
+  window.location.assign(buildSharePublishUrl({ shareAppBaseUrl, returnTo }));
 }
 
 function openShareSearch() {
